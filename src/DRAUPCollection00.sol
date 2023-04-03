@@ -1,7 +1,7 @@
 import {ERC721} from "openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
 
 
-contract Collection00ERC721 is ERC721 {
+contract DRAUPCollection00 is ERC721 {
     uint256 public immutable MAX_SUPPLY;
     string public baseTokenURI;
 
