@@ -74,11 +74,24 @@ import {ERC721} from "openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
 import {DefaultOperatorFilterer} from "operator-filter-registry/src/DefaultOperatorFilterer.sol";
 
 
+// define constants for the item types
+uint256 constant CORSET_ITEM_TYPE = 0;
+uint256 constant JACKET_ITEM_TYPE = 1;
+
+
 contract DRAUPCollection00 is ERC721, DefaultOperatorFilterer {
     string public baseTokenURI;
 
     constructor(string memory baseURI) ERC721("COLLECTION 00", "DRAUP:00") {
         baseTokenURI = baseURI;
+    }
+
+    function getSupply(uint256 itemType) public pure returns (uint256) {
+        if (itemType == 1) {
+            return 10000;
+        } else {
+        return 100;
+        }
     }
 
     // on-chain royalty enforcement integration
