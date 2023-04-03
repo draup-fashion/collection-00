@@ -103,21 +103,21 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
     }
 
     // hero pieces minted by DRAUP using short form generative techniques
-    function mintCoats(address to, bytes32[] calldata seeds) public onlyOwner {
+    function mintCoats(address to, string[] calldata seeds) public onlyOwner {
         uint256 itemType = COAT_ITEM_TYPE;
         require(maxSupplies[itemType] >= seeds.length, "Not enough supply for minting");
         maxSupplies[itemType] -= seeds.length;
         for (uint i=0; i<seeds.length; i++) {
-            _mint(to, itemType);
+            _mint(to, 1);
         }
     }
 
     // main collection pieces minted by public using long form generative techniques
-    // for our random seed strategy see:
+    // for our random seed strategy see: TK
     function mintItems(address to, uint256 itemType) public onlyOwner {
         require(maxSupplies[itemType] > 0, "Not enough supply for minting");
         maxSupplies[itemType] -= 1;
-        _mint(to, itemType);
+        _mint(to, 1);
     }
 
     // on-chain royalty enforcement integration

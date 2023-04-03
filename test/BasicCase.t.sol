@@ -22,6 +22,17 @@ contract BasicCaseTest is Test {
         vm.deal(minter, 100 ether);
     }
 
+    function runTestCoatMint() public {
+        string[] memory testSeeds = new string[](5);
+        testSeeds[0] = '274df19879c338d4acd68b3797896c25';
+        testSeeds[1] = 'ece92e421cec403258d77d3030763f5e';
+        testSeeds[2] = '69660874a37f73ec176a9f372f6a49c0';
+        testSeeds[3] = '56a5d2685dcd5481c4b60159186e32c7';
+        testSeeds[4] = '36a5d2685ded5481c4b60159186e32c8';
+        vm.prank(owner);
+        collection.mintCoats(minter, testSeeds);
+    }
+
     function testGetMaxSupply() public {
         uint256 supply = collection.getMaxSupply();
         assertEq(supply, 432);
@@ -36,8 +47,9 @@ contract BasicCaseTest is Test {
     }
 
     function testTotalSupply() public {
-        uint256 supply = collection.totalSupply();
-        assertEq(supply, 0);
+        assertEq(collection.totalSupply(), 0);
+        runTestCoatMint();
+        assertEq(collection.totalSupply(), 5);
     }
 
 }
