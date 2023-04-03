@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: MIT
+pragma solidity ^0.8.17;
+
 //
 // This software is developed by DRAUP, Inc. "DRAUP" is a trademark of DRAUP, Inc.
 // in the United States and other countries. Nothing herein grants you any rights in
 // or to DRAUP, Inc.'s trade names or trademarks, all of which are expressly
 // reserved to DRAUP, Inc.
+//
 //
 //
 //                            DRAUP COLLECTION 00
@@ -68,9 +71,10 @@
 //
 //
 import {ERC721} from "openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
+import {DefaultOperatorFilterer} from "operator-filter-registry/src/DefaultOperatorFilterer.sol";
 
 
-contract DRAUPCollection00 is ERC721 {
+contract DRAUPCollection00 is ERC721, DefaultOperatorFilterer {
     string public baseTokenURI;
 
     constructor(string memory baseURI) ERC721("COLLECTION 00", "DRAUP:00") {
