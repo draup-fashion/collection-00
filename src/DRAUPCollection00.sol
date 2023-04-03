@@ -80,18 +80,24 @@ uint256 constant JACKET_ITEM_TYPE = 1;
 
 
 contract DRAUPCollection00 is ERC721, DefaultOperatorFilterer {
+    uint256[5] private maxSupplies;
     string public baseTokenURI;
 
-    constructor(string memory baseURI) ERC721("COLLECTION 00", "DRAUP:00") {
+    constructor(uint256[5] memory setSupply, string memory baseURI) ERC721("DRAUP COLLECTION 00", "DRAUP:00") {
+        maxSupplies = setSupply;
         baseTokenURI = baseURI;
     }
 
-    function getSupply(uint256 itemType) public pure returns (uint256) {
-        if (itemType == 1) {
-            return 10000;
-        } else {
-        return 100;
-        }
+    function getMaxTotalSupply() public view returns (uint256) {
+        return maxSupplies[0] + maxSupplies[1] + maxSupplies[2] + maxSupplies[3] + maxSupplies[4];
+    }
+
+    function getMaxSupply(uint256 itemType) public view returns (uint256) {
+        return maxSupplies[itemType];
+    }
+
+    function getSupply(uint256 itemType) public view returns (uint256) {
+        return maxSupplies[itemType];
     }
 
     // on-chain royalty enforcement integration
