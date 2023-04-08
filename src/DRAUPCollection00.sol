@@ -86,6 +86,7 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
     string public baseTokenURI;
 
     mapping(uint256 => uint256) private _tokenItemTypes;
+    mapping(uint256 => uint256) private _tokenSeeds;
 
     constructor(uint256[5] memory setSupply, string memory baseURI) ERC721A("DRAUP COLLECTION 00", "DRAUP:00") {
         maxSupplies = setSupply;
@@ -104,6 +105,11 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
 
     function getItemSupply(uint256 itemType) public view returns (uint256) {
         return maxSupplies[itemType];
+    }
+
+    function tokenInfo(uint256 tokenId) public view returns (uint256 itemType, uint256 seed) {
+        itemType = _tokenItemTypes[tokenId];
+        seed = _tokenSeeds[tokenId];
     }
 
     // hero pieces minted by DRAUP using short form generative techniques
@@ -127,6 +133,7 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         maxSupplies[itemType] -= 1;
         uint256 tokenId = _nextTokenId();
         _tokenItemTypes[tokenId] = itemType;
+        _tokenSeeds[tokenId] = block.difficulty;
         _mint(to, 1);
     }
 

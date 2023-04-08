@@ -55,8 +55,13 @@ contract BasicCaseTest is Test {
     function testRegularItemMint() public {
         assertEq(collection.balanceOf(minter), 0);
         vm.prank(minter);
+        vm.difficulty(252123);
         collection.mintItems(minter, 3);
         assertEq(collection.balanceOf(minter), 1);
+        uint tokenId = collection.totalSupply() - 1;
+        (uint256 itemType, uint seed) = collection.tokenInfo(tokenId);
+        assertEq(itemType, 3);
+        assertEq(seed, 252123);
     }
 
 }
