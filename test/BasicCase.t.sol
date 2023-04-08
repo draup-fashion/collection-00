@@ -41,8 +41,8 @@ contract BasicCaseTest is Test {
     function testGetItemMaxSupply() public {
         assertEq(collection.getItemMaxSupply(COAT_ITEM_TYPE), 8);
         assertEq(collection.getItemMaxSupply(DRESS_ITEM_TYPE), 24);
-        assertEq(collection.getItemMaxSupply(JEANS_ITEM_TYPE), 56);
-        assertEq(collection.getItemMaxSupply(CORSET_ITEM_TYPE), 88);
+        assertEq(collection.getItemMaxSupply(PANTS_ITEM_TYPE), 56);
+        assertEq(collection.getItemMaxSupply(TOP_ITEM_TYPE), 88);
         assertEq(collection.getItemMaxSupply(HAT_ITEM_TYPE), 256);
     }
 
@@ -50,6 +50,13 @@ contract BasicCaseTest is Test {
         assertEq(collection.totalSupply(), 0);
         runTestCoatMint();
         assertEq(collection.totalSupply(), 5);
+    }
+
+    function testRegularItemMint() public {
+        assertEq(collection.balanceOf(minter), 0);
+        vm.prank(minter);
+        collection.mintItems(minter, 3);
+        assertEq(collection.balanceOf(minter), 1);
     }
 
 }

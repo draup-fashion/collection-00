@@ -77,18 +77,22 @@ import {DefaultOperatorFilterer} from "operator-filter-registry/src/DefaultOpera
 // define constants for the item types
 uint256 constant COAT_ITEM_TYPE = 0;
 uint256 constant DRESS_ITEM_TYPE = 1;
-uint256 constant JEANS_ITEM_TYPE = 2;
-uint256 constant CORSET_ITEM_TYPE = 3;
+uint256 constant PANTS_ITEM_TYPE = 2;
+uint256 constant TOP_ITEM_TYPE = 3;
 uint256 constant HAT_ITEM_TYPE = 4;
 
 contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
     uint256[5] private maxSupplies;
     string public baseTokenURI;
 
+    mapping(uint256 => uint256) private _tokenItemTypes;
+
     constructor(uint256[5] memory setSupply, string memory baseURI) ERC721A("DRAUP COLLECTION 00", "DRAUP:00") {
         maxSupplies = setSupply;
         baseTokenURI = baseURI;
     }
+
+    error CannotMintItemType();
 
     function getMaxSupply() public view returns (uint256) {
         return maxSupplies[0] + maxSupplies[1] + maxSupplies[2] + maxSupplies[3] + maxSupplies[4];
@@ -110,13 +114,19 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         for (uint i=0; i<seeds.length; i++) {
             _mint(to, 1);
         }
+        // item type is 0
     }
 
     // main collection pieces minted by public using long form generative techniques
     // for our random seed strategy see: TK
-    function mintItems(address to, uint256 itemType) public onlyOwner {
+    function mintItems(address to, uint256 itemType) public payable {
+        if (itemType == 0 || itemType > 4) {
+            revert CannotMintItemType();
+        }
         require(maxSupplies[itemType] > 0, "Not enough supply for minting");
         maxSupplies[itemType] -= 1;
+        uint256 tokenId = _nextTokenId();
+        _tokenItemTypes[tokenId] = itemType;
         _mint(to, 1);
     }
 
