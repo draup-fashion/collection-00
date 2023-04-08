@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 //
 // This software is developed by DRAUP, Inc. "DRAUP" is a trademark of DRAUP, Inc.
 // in the United States and other countries. Nothing herein grants you any rights in
