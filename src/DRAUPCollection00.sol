@@ -127,7 +127,6 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
     }
 
     // main collection pieces minted by public using long form generative techniques
-    // for our random seed strategy see: TK
     function mintItems(address to, uint256 itemType) public payable {
         if (itemType == 0 || itemType > 4) {
             revert CannotMintItemType();
