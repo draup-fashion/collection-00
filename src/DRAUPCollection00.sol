@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.19;
 
 //
 // This software is developed by DRAUP, Inc. "DRAUP" is a trademark of DRAUP, Inc.
