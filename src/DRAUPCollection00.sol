@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
 
 //
 // This software is developed by DRAUP, Inc. "DRAUP" is a trademark of DRAUP, Inc.
@@ -70,9 +69,11 @@ pragma solidity ^0.8.19;
 //
 //
 //
+pragma solidity ~0.8.17;
 import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
 import {ERC721A} from "erc721a/contracts/ERC721A.sol";
 import {DefaultOperatorFilterer} from "operator-filter-registry/src/DefaultOperatorFilterer.sol";
+
 
 // define constants for the item types
 uint256 constant COAT_ITEM_TYPE = 0;
