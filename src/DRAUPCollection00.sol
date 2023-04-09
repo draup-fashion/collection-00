@@ -72,7 +72,7 @@ pragma solidity ~0.8.18;
 import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
 import {ERC721A} from "erc721a/contracts/ERC721A.sol";
 import {DefaultOperatorFilterer} from "operator-filter-registry/src/DefaultOperatorFilterer.sol";
-
+import {BitSplit} from "./BitSplit.sol";
 
 // define constants for the item types
 uint256 constant COAT_ITEM_TYPE = 0;
@@ -80,8 +80,16 @@ uint256 constant DRESS_ITEM_TYPE = 1;
 uint256 constant PANTS_ITEM_TYPE = 2;
 uint256 constant TOP_ITEM_TYPE = 3;
 uint256 constant HAT_ITEM_TYPE = 4;
+// define constants for item prices
+// COATS PRIVATE SALE - min 1ETH
+// DRESS - 0.6ETH
+// PANTS - 0.4ETH
+// TOP - 0.2ETH
+// HAT - 0.08ETH
+
 
 contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
+    using BitSplit for uint256;
     uint256[5] private maxSupplies;
     string public baseTokenURI;
 
@@ -93,6 +101,7 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         baseTokenURI = baseURI;
     }
 
+    error InsufficientItemSupply(uint256 itemType);
     error CannotMintItemType();
     error TooManyItems();
 
@@ -130,7 +139,9 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
     function mintCoats(address to, bytes32[] calldata seeds) public onlyOwner {
         uint256 startTokenId = _nextTokenId();
         uint256 itemType = COAT_ITEM_TYPE;
-        require(maxSupplies[itemType] >= seeds.length, "Not enough supply for minting");
+        if (seeds.length > maxSupplies[itemType]) {
+            revert InsufficientItemSupply(itemType);
+        }
         maxSupplies[itemType] -= seeds.length;
         for (uint i=0; i<seeds.length; i++) {
             _mint(to, 1);
@@ -141,20 +152,40 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
 
     // main collection pieces minted by public using long form generative techniques
     function mintItems(address to, uint256[] calldata items) public payable {
-        if (items.length > 5) {
+        if (items.length > 4) {
             revert TooManyItems();
         }
+        uint batchStartTokenId = _nextTokenId();
+        uint256 itemType;
         for (uint i=0; i<items.length; i++) {
-            uint256 itemType = items[i];
+            itemType = items[i];
             if (itemType == 0 || itemType > 4) {
                 revert CannotMintItemType();
             }
-            require(maxSupplies[itemType] > 0, "Not enough supply for minting");
+            if (maxSupplies[itemType] == 0) {
+                revert InsufficientItemSupply(itemType);
+            }
             maxSupplies[itemType] -= 1;
-            uint256 tokenId = _nextTokenId();
-            bytes32 seed = keccak256(abi.encodePacked(tokenId, block.prevrandao, blockhash(block.number - 1), msg.sender));
-            _tokenItemTypes[tokenId] = itemType;
-            _tokenSeeds[tokenId] = seed;
+        }
+        for (uint i=0; i<items.length; i++) {
+            itemType = items[i];
+            uint rand = block.prevrandao;
+            if (items.length > 1) {
+                uint[4] memory rquarters = rand.splitQuarter();
+                if (items.length == 2) {
+                    if (i == 0) {
+                        rand = rquarters[0] | rquarters[1];
+                    } else {
+                        rand = rquarters[2] | rquarters[3];
+                    }
+                } else {
+                    // NB: when batch size is 3 we drop the randomness contribution from the last quarter of randao
+                    rand = rquarters[i];
+                }
+            }
+            bytes32 seed = keccak256(abi.encodePacked(batchStartTokenId+i, rand, blockhash(block.number - 1), msg.sender));
+            _tokenItemTypes[batchStartTokenId+i] = itemType;
+            _tokenSeeds[batchStartTokenId+i] = seed;
             _mint(to, 1);
         }
     }
