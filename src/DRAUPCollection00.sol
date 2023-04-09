@@ -164,9 +164,8 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         }
         uint batchStartTokenId = _nextTokenId();
         uint rand = block.prevrandao;
-        uint itemType;
         for (uint i=0; i<items.length; i++) {
-            itemType = items[i];
+            uint itemType = items[i];
             if (itemType == 0 || itemType > 4) {
                 revert CannotMintItemType();
             }
