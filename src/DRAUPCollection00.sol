@@ -86,7 +86,7 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
     string public baseTokenURI;
 
     mapping(uint256 => uint256) private _tokenItemTypes;
-    mapping(uint256 => uint256) private _tokenSeeds;
+    mapping(uint256 => bytes32) private _tokenSeeds;
 
     constructor(uint256[5] memory setSupply, string memory baseURI) ERC721A("DRAUP COLLECTION 00", "DRAUP:00") {
         maxSupplies = setSupply;
@@ -107,13 +107,26 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         return maxSupplies[itemType];
     }
 
-    function tokenInfo(uint256 tokenId) public view returns (uint256 itemType, uint256 seed) {
+    function tokenInfo(uint256 tokenId) public view returns (uint256 itemType, bytes32 seed) {
         itemType = _tokenItemTypes[tokenId];
         seed = _tokenSeeds[tokenId];
     }
 
+    function tokenInfos(uint256 start, uint256 end) public view returns (uint256[] memory itemTypes, bytes32[] memory seeds) {
+        if (end == 0) {
+            end = _nextTokenId();
+        }
+        require(start < end, "start must be less than end");
+        itemTypes = new uint256[](end-start);
+        seeds = new bytes32[](end-start);
+        for (uint256 i = start; i < end; i++) {
+            itemTypes[i-start] = _tokenItemTypes[i];
+            seeds[i-start] = _tokenSeeds[i];
+        }
+    }
+
     // hero pieces minted by DRAUP using short form generative techniques
-    function mintCoats(address to, uint[] calldata seeds) public onlyOwner {
+    function mintCoats(address to, bytes32[] calldata seeds) public onlyOwner {
         uint256 startTokenId = _nextTokenId();
         uint256 itemType = COAT_ITEM_TYPE;
         require(maxSupplies[itemType] >= seeds.length, "Not enough supply for minting");
@@ -123,7 +136,6 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
             // item type is 0
             _tokenSeeds[startTokenId+i] = seeds[i];
         }
-
     }
 
     // main collection pieces minted by public using long form generative techniques
@@ -134,8 +146,9 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         require(maxSupplies[itemType] > 0, "Not enough supply for minting");
         maxSupplies[itemType] -= 1;
         uint256 tokenId = _nextTokenId();
+        bytes32 seed = keccak256(abi.encodePacked(tokenId, block.difficulty, blockhash(block.number - 1), msg.sender));
         _tokenItemTypes[tokenId] = itemType;
-        _tokenSeeds[tokenId] = block.difficulty;
+        _tokenSeeds[tokenId] = seed;
         _mint(to, 1);
     }
 

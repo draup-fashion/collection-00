@@ -23,12 +23,12 @@ contract BasicCaseTest is Test {
     }
 
     function runTestCoatMint() public {
-        uint[] memory testSeeds = new uint[](5);
-        testSeeds[0] = 23423523523523;
-        testSeeds[1] = 38385235235235;
-        testSeeds[2] = 383852352352353333;
-        testSeeds[3] = 2342342545667777;
-        testSeeds[4] = 87766555677778888;
+        bytes32[] memory testSeeds = new bytes32[](5);
+        testSeeds[0] = "weofijweodijweodjwedo";
+        testSeeds[1] = "weo38dhdbdbdwedo";
+        testSeeds[2] = "dkdhhhdt5633gjgjgj";
+        testSeeds[3] = "euufjeijdie22gwefwefwefg2s";
+        testSeeds[4] = "oedijeodi2u2hsu2hsi2s99j";
         vm.prank(owner);
         collection.mintCoats(minter, testSeeds);
     }
@@ -59,9 +59,26 @@ contract BasicCaseTest is Test {
         collection.mintItems(minter, 3);
         assertEq(collection.balanceOf(minter), 1);
         uint tokenId = collection.totalSupply() - 1;
-        (uint256 itemType, uint seed) = collection.tokenInfo(tokenId);
+        (uint256 itemType, bytes32 seed) = collection.tokenInfo(tokenId);
         assertEq(itemType, 3);
-        assertEq(seed, 252123);
+        assertGt(uint(seed), 1_000_000);
+    }
+
+    function testTokenInfos() public {
+        vm.startPrank(minter);
+        vm.difficulty(252123);
+        collection.mintItems(minter, 1);
+        collection.mintItems(minter, 2);
+        collection.mintItems(minter, 3);
+        (uint256[] memory itemTypes, bytes32[] memory seeds) = collection.tokenInfos(0,0);
+        assertEq(itemTypes.length, 3);
+        assertEq(seeds.length, 3);
+        assertEq(itemTypes[0], 1);
+        assertEq(itemTypes[1], 2);
+        assertEq(itemTypes[2], 3);
+        assertGt(uint(seeds[0]), 1_000_000);
+        assertGt(uint(seeds[1]), 1_000_000);
+        assertGt(uint(seeds[2]), 1_000_000);
     }
 
 }
