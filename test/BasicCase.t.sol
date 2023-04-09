@@ -56,7 +56,9 @@ contract BasicCaseTest is Test {
         assertEq(collection.balanceOf(minter), 0);
         vm.prank(minter);
         vm.difficulty(252123);
-        collection.mintItems(minter, 3);
+        uint256[] memory itemsToMint = new uint256[](1);
+        itemsToMint[0] = 3;
+        collection.mintItems(minter, itemsToMint);
         assertEq(collection.balanceOf(minter), 1);
         uint tokenId = collection.totalSupply() - 1;
         (uint256 itemType, bytes32 seed) = collection.tokenInfo(tokenId);
@@ -67,9 +69,13 @@ contract BasicCaseTest is Test {
     function testTokenInfos() public {
         vm.startPrank(minter);
         vm.difficulty(252123);
-        collection.mintItems(minter, 1);
-        collection.mintItems(minter, 2);
-        collection.mintItems(minter, 3);
+        uint256[] memory itemsToMint = new uint256[](2);
+        itemsToMint[0] = 1;
+        itemsToMint[1] = 2;
+        uint256[] memory moreItemsToMint = new uint256[](1);
+        moreItemsToMint[0] = 3;
+        collection.mintItems(minter, itemsToMint);
+        collection.mintItems(minter, moreItemsToMint);
         (uint256[] memory itemTypes, bytes32[] memory seeds) = collection.tokenInfos(0,0);
         assertEq(itemTypes.length, 3);
         assertEq(seeds.length, 3);

@@ -94,6 +94,7 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
     }
 
     error CannotMintItemType();
+    error TooManyItems();
 
     function getMaxSupply() public view returns (uint256) {
         return maxSupplies[0] + maxSupplies[1] + maxSupplies[2] + maxSupplies[3] + maxSupplies[4];
@@ -139,17 +140,23 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
     }
 
     // main collection pieces minted by public using long form generative techniques
-    function mintItems(address to, uint256 itemType) public payable {
-        if (itemType == 0 || itemType > 4) {
-            revert CannotMintItemType();
+    function mintItems(address to, uint256[] calldata items) public payable {
+        if (items.length > 5) {
+            revert TooManyItems();
         }
-        require(maxSupplies[itemType] > 0, "Not enough supply for minting");
-        maxSupplies[itemType] -= 1;
-        uint256 tokenId = _nextTokenId();
-        bytes32 seed = keccak256(abi.encodePacked(tokenId, block.prevrandao, blockhash(block.number - 1), msg.sender));
-        _tokenItemTypes[tokenId] = itemType;
-        _tokenSeeds[tokenId] = seed;
-        _mint(to, 1);
+        for (uint i=0; i<items.length; i++) {
+            uint256 itemType = items[i];
+            if (itemType == 0 || itemType > 4) {
+                revert CannotMintItemType();
+            }
+            require(maxSupplies[itemType] > 0, "Not enough supply for minting");
+            maxSupplies[itemType] -= 1;
+            uint256 tokenId = _nextTokenId();
+            bytes32 seed = keccak256(abi.encodePacked(tokenId, block.prevrandao, blockhash(block.number - 1), msg.sender));
+            _tokenItemTypes[tokenId] = itemType;
+            _tokenSeeds[tokenId] = seed;
+            _mint(to, 1);
+        }
     }
 
     // on-chain royalty enforcement integration
