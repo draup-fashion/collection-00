@@ -80,27 +80,24 @@ uint256 constant DRESS_ITEM_TYPE = 1;
 uint256 constant PANTS_ITEM_TYPE = 2;
 uint256 constant TOP_ITEM_TYPE = 3;
 uint256 constant HAT_ITEM_TYPE = 4;
-// define constants for item prices
-// COATS PRIVATE SALE - min 1ETH
-// DRESS - 0.6ETH
-// PANTS - 0.4ETH
-// TOP - 0.2ETH
-// HAT - 0.08ETH
-
 
 contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
     using BitSplit for uint256;
     uint256[5] private maxSupplies;
+    uint256[5] private mintPrices;
     string public baseTokenURI;
 
     mapping(uint256 => uint256) private _tokenItemTypes;
+
     mapping(uint256 => bytes32) private _tokenSeeds;
 
-    constructor(uint256[5] memory setSupply, string memory baseURI) ERC721A("DRAUP COLLECTION 00", "DRAUP:00") {
+    constructor(uint256[5] memory setSupply, uint256[5] memory setMintPrices, string memory initialBaseURI) ERC721A("DRAUP COLLECTION 00", "DRAUP:00") {
         maxSupplies = setSupply;
-        baseTokenURI = baseURI;
+        mintPrices = setMintPrices;
+        baseTokenURI = initialBaseURI;
     }
 
+    error InsufficientFunds(uint256 totalCost);
     error InsufficientItemSupply(uint256 itemType);
     error CannotMintItemType();
     error TooManyItems();
@@ -150,10 +147,20 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         }
     }
 
+    function mintCostForItems(uint256[] calldata items) public view returns (uint256 totalCost) {
+        for (uint i=0; i<items.length; i++) {
+            totalCost += mintPrices[items[i]];
+        }
+    }
+
     // main collection pieces minted by public using long form generative techniques
     function mintItems(address to, uint256[] calldata items) public payable {
         if (items.length > 4) {
             revert TooManyItems();
+        }
+        uint totalCost = mintCostForItems(items);
+        if (msg.value < totalCost) {
+            revert InsufficientFunds(totalCost);
         }
         uint batchStartTokenId = _nextTokenId();
         uint256 itemType;

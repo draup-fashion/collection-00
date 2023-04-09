@@ -16,7 +16,12 @@ contract BasicCaseTest is Test {
         initialSupplies[2] = 56;
         initialSupplies[3] = 88;
         initialSupplies[4] = 256;
-        collection = new DRAUPCollection00(initialSupplies, 'https://example.com/yolo/');
+        uint[5] memory itemPrices;
+        itemPrices[1] = 0.6 ether;
+        itemPrices[2] = 0.35 ether;
+        itemPrices[3] = 0.2 ether;
+        itemPrices[4] = 0.08 ether;
+        collection = new DRAUPCollection00(initialSupplies, itemPrices, 'https://example.com/yolo/');
         collection.transferOwnership(owner);
         vm.deal(owner, 100 ether);
         vm.deal(minter, 100 ether);
@@ -58,7 +63,8 @@ contract BasicCaseTest is Test {
         vm.difficulty(252123);
         uint256[] memory itemsToMint = new uint256[](1);
         itemsToMint[0] = 3;
-        collection.mintItems(minter, itemsToMint);
+        uint mintPrice = collection.mintCostForItems(itemsToMint);
+        collection.mintItems{value:mintPrice}(minter, itemsToMint);
         assertEq(collection.balanceOf(minter), 1);
         uint tokenId = collection.totalSupply() - 1;
         (uint256 itemType, bytes32 seed) = collection.tokenInfo(tokenId);
@@ -72,10 +78,12 @@ contract BasicCaseTest is Test {
         uint256[] memory itemsToMint = new uint256[](2);
         itemsToMint[0] = 1;
         itemsToMint[1] = 2;
+        uint mintPrice = collection.mintCostForItems(itemsToMint);
         uint256[] memory moreItemsToMint = new uint256[](1);
         moreItemsToMint[0] = 3;
-        collection.mintItems(minter, itemsToMint);
-        collection.mintItems(minter, moreItemsToMint);
+        uint secondMintPrice = collection.mintCostForItems(moreItemsToMint);
+        collection.mintItems{value:mintPrice}(minter, itemsToMint);
+        collection.mintItems{value:secondMintPrice}(minter, moreItemsToMint);
         (uint256[] memory itemTypes, bytes32[] memory seeds) = collection.tokenInfos(0,0);
         assertEq(itemTypes.length, 3);
         assertEq(seeds.length, 3);
