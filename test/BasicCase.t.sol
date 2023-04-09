@@ -61,10 +61,8 @@ contract BasicCaseTest is Test {
         assertEq(collection.balanceOf(minter), 0);
         vm.prank(minter);
         vm.difficulty(252123);
-        uint256[] memory itemsToMint = new uint256[](1);
-        itemsToMint[0] = 3;
-        uint mintPrice = collection.mintCostForItems(itemsToMint);
-        collection.mintItems{value:mintPrice}(minter, itemsToMint);
+        uint mintPrice = collection.mintCostForItems(TOP_ITEM_TYPE, 1);
+        collection.mintItems{value:mintPrice}(minter, TOP_ITEM_TYPE, 1);
         assertEq(collection.balanceOf(minter), 1);
         uint tokenId = collection.totalSupply() - 1;
         (uint256 itemType, bytes32 seed) = collection.tokenInfo(tokenId);
@@ -75,24 +73,19 @@ contract BasicCaseTest is Test {
     function testTokenInfos() public {
         vm.startPrank(minter);
         vm.difficulty(252123);
-        uint256[] memory itemsToMint = new uint256[](2);
-        itemsToMint[0] = 1;
-        itemsToMint[1] = 2;
-        uint mintPrice = collection.mintCostForItems(itemsToMint);
-        uint256[] memory moreItemsToMint = new uint256[](1);
-        moreItemsToMint[0] = 3;
-        uint secondMintPrice = collection.mintCostForItems(moreItemsToMint);
-        collection.mintItems{value:mintPrice}(minter, itemsToMint);
-        collection.mintItems{value:secondMintPrice}(minter, moreItemsToMint);
+
+
+        uint mintPrice = collection.mintCostForItems(PANTS_ITEM_TYPE,1);
+        uint secondMintPrice = collection.mintCostForItems(HAT_ITEM_TYPE,1);
+        collection.mintItems{value:mintPrice}(minter, PANTS_ITEM_TYPE,1);
+        collection.mintItems{value:secondMintPrice}(minter, HAT_ITEM_TYPE,1);
         (uint256[] memory itemTypes, bytes32[] memory seeds) = collection.tokenInfos(0,0);
-        assertEq(itemTypes.length, 3);
-        assertEq(seeds.length, 3);
-        assertEq(itemTypes[0], 1);
-        assertEq(itemTypes[1], 2);
-        assertEq(itemTypes[2], 3);
+        assertEq(itemTypes.length, 2);
+        assertEq(seeds.length, 2);
+        assertEq(itemTypes[0], 2);
+        assertEq(itemTypes[1], 4);
         assertGt(uint(seeds[0]), 1_000_000);
         assertGt(uint(seeds[1]), 1_000_000);
-        assertGt(uint(seeds[2]), 1_000_000);
     }
 
 }

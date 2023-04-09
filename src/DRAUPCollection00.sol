@@ -81,6 +81,14 @@ uint256 constant PANTS_ITEM_TYPE = 2;
 uint256 constant TOP_ITEM_TYPE = 3;
 uint256 constant HAT_ITEM_TYPE = 4;
 
+uint constant SUCCESS_MINT_ALLOWED = 0;
+uint constant ERR_SENDER_NOT_ALLOWED = 1;
+uint8 constant ERR_ITEM_QUANTITY_ZERO = 2;
+uint8 constant ERR_ITEM_QUANTITY_TOO_HIGH = 3;
+uint8 constant ERR_INSUFFICIENT_FUNDS = 4;
+uint8 constant ERR_INSUFFICIENT_ITEM_SUPPLY = 5;
+uint8 constant ERR_CANNOT_MINT_ITEM_TYPE = 6;
+
 contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
     using BitSplit for uint256;
     uint256[5] private maxSupplies;
@@ -97,10 +105,7 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         baseTokenURI = initialBaseURI;
     }
 
-    error InsufficientFunds(uint256 totalCost);
-    error InsufficientItemSupply(uint256 itemType);
-    error CannotMintItemType();
-    error TooManyItems();
+    error MintValidationFailure(uint errorCode);
 
     function getMaxSupply() public view returns (uint256) {
         return maxSupplies[0] + maxSupplies[1] + maxSupplies[2] + maxSupplies[3] + maxSupplies[4];
@@ -137,7 +142,7 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         uint256 startTokenId = _nextTokenId();
         uint256 itemType = COAT_ITEM_TYPE;
         if (seeds.length > maxSupplies[itemType]) {
-            revert InsufficientItemSupply(itemType);
+            revert MintValidationFailure(ERR_INSUFFICIENT_ITEM_SUPPLY);
         }
         maxSupplies[itemType] -= seeds.length;
         for (uint i=0; i<seeds.length; i++) {
@@ -147,35 +152,44 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         }
     }
 
-    function mintCostForItems(uint256[] calldata items) public view returns (uint256 totalCost) {
-        for (uint i=0; i<items.length; i++) {
-            totalCost += mintPrices[items[i]];
+    function mintCostForItems(uint itemType, uint quantity) public view returns (uint totalCost) {
+        totalCost = mintPrices[itemType] * quantity;
+    }
+
+    function mintingIsAllowed(uint itemType, uint quantity) public view returns (uint minterStatus) {
+        if (itemType == 0 || itemType > 4) {
+            minterStatus = ERR_CANNOT_MINT_ITEM_TYPE;
         }
+        if (quantity == 0) {
+            minterStatus = ERR_ITEM_QUANTITY_ZERO;
+        }
+        if (quantity > 4) {
+            minterStatus = ERR_ITEM_QUANTITY_TOO_HIGH;
+        }
+        if (maxSupplies[itemType] < quantity) {
+            minterStatus = ERR_INSUFFICIENT_ITEM_SUPPLY;
+        }
+        // TODO add check for valid digital signature from allow list
     }
 
     // main collection pieces minted by public using long form generative techniques
-    function mintItems(address to, uint256[] calldata items) public payable {
-        if (items.length > 4) {
-            revert TooManyItems();
+    function mintItems(address to, uint itemType, uint quantity) public payable {
+        uint minterStatus = mintingIsAllowed(itemType, quantity);
+        if (minterStatus != SUCCESS_MINT_ALLOWED) {
+            revert MintValidationFailure(minterStatus);
         }
-        uint totalCost = mintCostForItems(items);
+        uint totalCost = mintCostForItems(itemType, quantity);
         if (msg.value < totalCost) {
-            revert InsufficientFunds(totalCost);
+            revert MintValidationFailure(ERR_INSUFFICIENT_FUNDS);
         }
+        // mint the tokens
+        maxSupplies[itemType] -= quantity;
         uint batchStartTokenId = _nextTokenId();
         uint rand = block.prevrandao;
-        for (uint i=0; i<items.length; i++) {
-            uint itemType = items[i];
-            if (itemType == 0 || itemType > 4) {
-                revert CannotMintItemType();
-            }
-            if (maxSupplies[itemType] == 0) {
-                revert InsufficientItemSupply(itemType);
-            }
-            maxSupplies[itemType] -= 1;
-            if (items.length > 1) {
+        for (uint i=0; i<quantity; i++) {
+            if (quantity > 1) {
                 uint[4] memory rquarters = rand.splitQuarter();
-                if (items.length == 2) {
+                if (quantity == 2) {
                     if (i == 0) {
                         rand = rquarters[0] | rquarters[1];
                     } else {
@@ -189,8 +203,8 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
             bytes32 seed = keccak256(abi.encodePacked(batchStartTokenId+i, rand, blockhash(block.number - 1), msg.sender));
             _tokenItemTypes[batchStartTokenId+i] = itemType;
             _tokenSeeds[batchStartTokenId+i] = seed;
-            _mint(to, 1);
         }
+        _mint(to, quantity);
     }
 
     // on-chain royalty enforcement integration
