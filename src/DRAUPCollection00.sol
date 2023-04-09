@@ -163,7 +163,8 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
             revert InsufficientFunds(totalCost);
         }
         uint batchStartTokenId = _nextTokenId();
-        uint256 itemType;
+        uint rand = block.prevrandao;
+        uint itemType;
         for (uint i=0; i<items.length; i++) {
             itemType = items[i];
             if (itemType == 0 || itemType > 4) {
@@ -173,10 +174,6 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
                 revert InsufficientItemSupply(itemType);
             }
             maxSupplies[itemType] -= 1;
-        }
-        for (uint i=0; i<items.length; i++) {
-            itemType = items[i];
-            uint rand = block.prevrandao;
             if (items.length > 1) {
                 uint[4] memory rquarters = rand.splitQuarter();
                 if (items.length == 2) {
