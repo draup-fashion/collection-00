@@ -27,6 +27,11 @@ contract BasicCaseTest is Test {
         vm.deal(minter, 100 ether);
     }
 
+    function runStartMint() public {
+        vm.prank(owner);
+        collection.startMinting();
+    }
+
     function runTestCoatMint() public {
         bytes32[] memory testSeeds = new bytes32[](5);
         testSeeds[0] = "weofijweodijweodjwedo";
@@ -58,6 +63,7 @@ contract BasicCaseTest is Test {
     }
 
     function testRegularItemMint() public {
+        runStartMint();
         assertEq(collection.balanceOf(minter), 0);
         vm.prank(minter);
         vm.difficulty(252123);
@@ -70,11 +76,10 @@ contract BasicCaseTest is Test {
         assertGt(uint(seed), 1_000_000);
     }
 
-    function testTokenInfos() public {
+    function testMultipleItemsMint() public {
+        runStartMint();
         vm.startPrank(minter);
         vm.difficulty(252123);
-
-
         uint mintPrice = collection.mintCostForItems(PANTS_ITEM_TYPE,1);
         uint secondMintPrice = collection.mintCostForItems(HAT_ITEM_TYPE,1);
         collection.mintItems{value:mintPrice}(minter, PANTS_ITEM_TYPE,1);

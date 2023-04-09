@@ -70,6 +70,7 @@
 //
 pragma solidity ~0.8.18;
 import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
+import {ECDSA} from "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
 import {ERC721A} from "erc721a/contracts/ERC721A.sol";
 import {DefaultOperatorFilterer} from "operator-filter-registry/src/DefaultOperatorFilterer.sol";
 import {BitSplit} from "./BitSplit.sol";
@@ -81,6 +82,7 @@ uint256 constant PANTS_ITEM_TYPE = 2;
 uint256 constant TOP_ITEM_TYPE = 3;
 uint256 constant HAT_ITEM_TYPE = 4;
 
+// define constants for checking mint access permissions
 uint constant SUCCESS_MINT_ALLOWED = 0;
 uint constant ERR_SENDER_NOT_ALLOWED = 1;
 uint8 constant ERR_ITEM_QUANTITY_ZERO = 2;
@@ -89,10 +91,19 @@ uint8 constant ERR_INSUFFICIENT_FUNDS = 4;
 uint8 constant ERR_INSUFFICIENT_ITEM_SUPPLY = 5;
 uint8 constant ERR_CANNOT_MINT_ITEM_TYPE = 6;
 
+// define constants for mint process
+uint constant MINT_NOT_STARTED = 0;
+uint constant MINT_IN_PROGRESS = 1;
+uint constant MINT_FINISHED = 2;
+
 contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
+    using ECDSA for bytes32;
     using BitSplit for uint256;
-    uint256[5] private maxSupplies;
-    uint256[5] private mintPrices;
+
+    uint[5] private maxSupplies;
+    uint[5] private mintPrices;
+    uint public mintingStatus;
+    address public signer;
     string public baseTokenURI;
 
     mapping(uint256 => uint256) private _tokenItemTypes;
@@ -104,6 +115,8 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         mintPrices = setMintPrices;
         baseTokenURI = initialBaseURI;
     }
+
+    // Token Info
 
     error MintValidationFailure(uint errorCode);
 
@@ -137,6 +150,21 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         }
     }
 
+    // Minting
+
+    error MintingNotActive();
+
+    function mintingIsActive() public view returns (bool) {
+        return mintingStatus == MINT_IN_PROGRESS;
+    }
+
+    modifier onlyDuringMinting() {
+        if (!mintingIsActive()) {
+            revert MintingNotActive();
+        }
+        _;
+    }
+
     // hero pieces minted by DRAUP using short form generative techniques
     function mintCoats(address to, bytes32[] calldata seeds) public onlyOwner {
         uint256 startTokenId = _nextTokenId();
@@ -152,28 +180,29 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         }
     }
 
+    function mintingIsAllowed(uint itemType, uint quantity) public view returns (uint) {
+        if (itemType == 0 || itemType > 4) {
+            return ERR_CANNOT_MINT_ITEM_TYPE;
+        }
+        if (quantity == 0) {
+            return ERR_ITEM_QUANTITY_ZERO;
+        }
+        if (quantity > 4) {
+            return ERR_ITEM_QUANTITY_TOO_HIGH;
+        }
+        if (maxSupplies[itemType] < quantity) {
+            return ERR_INSUFFICIENT_ITEM_SUPPLY;
+        }
+        // TODO add check for valid digital signature from allow list
+        return SUCCESS_MINT_ALLOWED;
+    }
+
     function mintCostForItems(uint itemType, uint quantity) public view returns (uint totalCost) {
         totalCost = mintPrices[itemType] * quantity;
     }
 
-    function mintingIsAllowed(uint itemType, uint quantity) public view returns (uint minterStatus) {
-        if (itemType == 0 || itemType > 4) {
-            minterStatus = ERR_CANNOT_MINT_ITEM_TYPE;
-        }
-        if (quantity == 0) {
-            minterStatus = ERR_ITEM_QUANTITY_ZERO;
-        }
-        if (quantity > 4) {
-            minterStatus = ERR_ITEM_QUANTITY_TOO_HIGH;
-        }
-        if (maxSupplies[itemType] < quantity) {
-            minterStatus = ERR_INSUFFICIENT_ITEM_SUPPLY;
-        }
-        // TODO add check for valid digital signature from allow list
-    }
-
     // main collection pieces minted by public using long form generative techniques
-    function mintItems(address to, uint itemType, uint quantity) public payable {
+    function mintItems(address to, uint itemType, uint quantity) public payable onlyDuringMinting {
         uint minterStatus = mintingIsAllowed(itemType, quantity);
         if (minterStatus != SUCCESS_MINT_ALLOWED) {
             revert MintValidationFailure(minterStatus);
@@ -207,7 +236,8 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         _mint(to, quantity);
     }
 
-    // on-chain royalty enforcement integration
+    // Transfers, secondary trading, and on-chain royalty enforcement integration
+
     function setApprovalForAll(address operator, bool approved) public override onlyAllowedOperatorApproval(operator) {
         super.setApprovalForAll(operator, approved);
     }
@@ -232,5 +262,33 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
     {
         super.safeTransferFrom(from, to, tokenId, data);
     }
+
+    // Admin actions
+
+    error AdminActionFailure();
+
+    function startMinting() public onlyOwner {
+        if (mintingStatus == MINT_FINISHED) {
+            revert AdminActionFailure();
+        }
+        mintingStatus = MINT_IN_PROGRESS;
+    }
+
+    function pauseMinting() public onlyOwner {
+        if (mintingStatus == MINT_FINISHED) {
+            revert AdminActionFailure();
+        }
+        mintingStatus = MINT_NOT_STARTED;
+    }
+
+    function finishMinting() public onlyOwner {
+        mintingStatus = MINT_FINISHED;
+    }
+
+    function setBaseURI(string memory newBaseURI) public onlyOwner {
+        baseTokenURI = newBaseURI;
+    }
+
+
 
 }
