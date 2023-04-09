@@ -68,7 +68,7 @@
 //
 //
 //
-pragma solidity ~0.8.17;
+pragma solidity ~0.8.18;
 import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
 import {ERC721A} from "erc721a/contracts/ERC721A.sol";
 import {DefaultOperatorFilterer} from "operator-filter-registry/src/DefaultOperatorFilterer.sol";
@@ -146,7 +146,7 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         require(maxSupplies[itemType] > 0, "Not enough supply for minting");
         maxSupplies[itemType] -= 1;
         uint256 tokenId = _nextTokenId();
-        bytes32 seed = keccak256(abi.encodePacked(tokenId, block.difficulty, blockhash(block.number - 1), msg.sender));
+        bytes32 seed = keccak256(abi.encodePacked(tokenId, block.prevrandao, blockhash(block.number - 1), msg.sender));
         _tokenItemTypes[tokenId] = itemType;
         _tokenSeeds[tokenId] = seed;
         _mint(to, 1);
