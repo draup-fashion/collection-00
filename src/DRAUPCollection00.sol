@@ -96,20 +96,20 @@ uint constant MINT_FINISHED = 2;
 contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
     using ECDSA for bytes32;
 
-    uint[5] private maxSupplies;
-    uint[5] private currentSupplies;
-    uint[5] private mintPrices;
+    uint[5] private _maxSupplies;
+    uint[5] private _currentSupplies;
+    uint[5] private _mintPrices;
     uint public mintingStatus;
     address public signer;
     string public baseTokenURI;
 
-    mapping(uint256 => uint256) private _tokenItemTypes;
+    mapping(uint => uint) private _tokenItemTypes;
 
-    mapping(uint256 => bytes32) private _tokenSeeds;
+    mapping(uint => bytes32) private _tokenSeeds;
 
-    constructor(uint256[5] memory setSupply, uint256[5] memory setMintPrices, string memory initialBaseURI, address initialSigner) ERC721A("DRAUP COLLECTION 00", "DRAUP:00") {
-        maxSupplies = setSupply;
-        mintPrices = setMintPrices;
+    constructor(uint[5] memory setSupply, uint[5] memory setMintPrices, string memory initialBaseURI, address initialSigner) ERC721A("DRAUP COLLECTION 00", "DRAUP:00") {
+        _maxSupplies = setSupply;
+        _mintPrices = setMintPrices;
         baseTokenURI = initialBaseURI;
         signer = initialSigner;
     }
@@ -117,28 +117,28 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
     // Token Info
 
     function getMaxSupply() public view returns (uint) {
-        return maxSupplies[0] + maxSupplies[1] + maxSupplies[2] + maxSupplies[3] + maxSupplies[4];
+        return _maxSupplies[0] + _maxSupplies[1] + _maxSupplies[2] + _maxSupplies[3] + _maxSupplies[4];
     }
 
     function itemSupplyInfo() public view returns (uint[5] memory itemSupplies, uint[5] memory itemMaxSupplies, uint[5] memory itemMintPrices) {
-        itemSupplies = currentSupplies;
-        itemMaxSupplies = itemMaxSupplies;
-        itemMintPrices = mintPrices;
+        itemSupplies = _currentSupplies;
+        itemMaxSupplies = _maxSupplies;
+        itemMintPrices = _mintPrices;
     }
 
-    function tokenInfo(uint256 tokenId) public view returns (uint256 itemType, bytes32 seed) {
+    function tokenInfo(uint tokenId) public view returns (uint itemType, bytes32 seed) {
         itemType = _tokenItemTypes[tokenId];
         seed = _tokenSeeds[tokenId];
     }
 
-    function tokenInfos(uint256 start, uint256 end) public view returns (uint256[] memory itemTypes, bytes32[] memory seeds) {
+    function tokenInfos(uint start, uint end) public view returns (uint[] memory itemTypes, bytes32[] memory seeds) {
         if (end == 0) {
             end = _nextTokenId();
         }
         require(start < end, "start must be less than end");
-        itemTypes = new uint256[](end-start);
+        itemTypes = new uint[](end-start);
         seeds = new bytes32[](end-start);
-        for (uint256 i = start; i < end; i++) {
+        for (uint i = start; i < end; i++) {
             itemTypes[i-start] = _tokenItemTypes[i];
             seeds[i-start] = _tokenSeeds[i];
         }
@@ -177,7 +177,7 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         if (itemType == 0 || itemType > 4) {
             return ERR_CANNOT_MINT_ITEM_TYPE;
         }
-        if (currentSupplies[itemType] == 0) {
+        if (_currentSupplies[itemType] == 0) {
             return ERR_INSUFFICIENT_ITEM_SUPPLY;
         }
         return SUCCESS_MINT_ALLOWED;
@@ -185,12 +185,12 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
 
     // hero pieces minted by DRAUP using short form generative techniques
     function mintCoats(address to, bytes32[] calldata seeds) public onlyOwner {
-        uint256 startTokenId = _nextTokenId();
-        uint256 itemType = COAT_ITEM_TYPE;
-        if (seeds.length > maxSupplies[itemType]) {
+        uint startTokenId = _nextTokenId();
+        uint itemType = COAT_ITEM_TYPE;
+        if (seeds.length > _maxSupplies[itemType]) {
             revert MintValidationFailure(ERR_INSUFFICIENT_ITEM_SUPPLY);
         }
-        maxSupplies[itemType] -= seeds.length;
+        _maxSupplies[itemType] -= seeds.length;
         for (uint i=0; i<seeds.length; i++) {
             _mint(to, 1);
             // item type is 0
@@ -208,14 +208,14 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         if (!isValidSignature(msg.sender, signature)) {
             revert MintValidationFailure(ERR_ALLOWLIST_SIGNATURE_INVALID);
         }
-        if (msg.value < mintPrices[itemType]) {
+        if (msg.value < _mintPrices[itemType]) {
             revert MintValidationFailure(ERR_INSUFFICIENT_FUNDS);
         }
 
         // mint token
         uint upcomingTokenId = _nextTokenId();
         bytes32 seed = keccak256(abi.encodePacked(upcomingTokenId, block.prevrandao, blockhash(block.number - 1), msg.sender));
-        currentSupplies[itemType] += 1;
+        _currentSupplies[itemType] += 1;
         _tokenItemTypes[upcomingTokenId] = itemType;
         _tokenSeeds[upcomingTokenId] = seed;
         _mint(msg.sender, 1);
@@ -227,19 +227,19 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         super.setApprovalForAll(operator, approved);
     }
 
-    function approve(address operator, uint256 tokenId) public override payable onlyAllowedOperatorApproval(operator) {
+    function approve(address operator, uint tokenId) public override payable onlyAllowedOperatorApproval(operator) {
         super.approve(operator, tokenId);
     }
 
-    function transferFrom(address from, address to, uint256 tokenId) public override payable onlyAllowedOperator(from) {
+    function transferFrom(address from, address to, uint tokenId) public override payable onlyAllowedOperator(from) {
         super.transferFrom(from, to, tokenId);
     }
 
-    function safeTransferFrom(address from, address to, uint256 tokenId) public override payable onlyAllowedOperator(from) {
+    function safeTransferFrom(address from, address to, uint tokenId) public override payable onlyAllowedOperator(from) {
         super.safeTransferFrom(from, to, tokenId);
     }
 
-    function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory data)
+    function safeTransferFrom(address from, address to, uint tokenId, bytes memory data)
         public
         override
         payable
