@@ -9,21 +9,23 @@ contract BasicCaseTest is Test {
     event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
     address private owner = vm.addr(uint256(keccak256(abi.encodePacked("owner"))));
     address private minter = vm.addr(uint256(keccak256(abi.encodePacked("minter"))));
+    address private testSigner = 0x7eA005D1982a6cf8356289b94C6f0CbC33bE78C3;
     bytes private minterSignature = hex'77f59a1a67626d1311ae427cbd240d7ef5af7941a71d7df9158795d5655435700a99bf517107d43f81daecba20f8ac6a6b683c4abb5fa1775fed4b2393c6c9131c';
 
     function setUp() public {
+        // NB: for quantity, pricing and other announcements, join the DRAUP Discord: https://discord.gg/avumhWTxe9
         uint256[5] memory initialSupplies;
         initialSupplies[0] = 8;
-        initialSupplies[1] = 24;
-        initialSupplies[2] = 56;
-        initialSupplies[3] = 88;
-        initialSupplies[4] = 256;
+        initialSupplies[1] = 10;
+        initialSupplies[2] = 12;
+        initialSupplies[3] = 14;
+        initialSupplies[4] = 16;
         uint[5] memory itemPrices;
-        itemPrices[1] = 0.6 ether;
-        itemPrices[2] = 0.35 ether;
-        itemPrices[3] = 0.2 ether;
-        itemPrices[4] = 0.08 ether;
-        collection = new DRAUPCollection00(initialSupplies, itemPrices, 'https://example.com/yolo/', 0x7eA005D1982a6cf8356289b94C6f0CbC33bE78C3);
+        itemPrices[1] = 0.1 ether;
+        itemPrices[2] = 0.2 ether;
+        itemPrices[3] = 0.3 ether;
+        itemPrices[4] = 0.4 ether;
+        collection = new DRAUPCollection00(initialSupplies, itemPrices, 'https://example.com/yolo/', testSigner);
         collection.transferOwnership(owner);
         vm.deal(owner, 100 ether);
         vm.deal(minter, 100 ether);
@@ -47,15 +49,15 @@ contract BasicCaseTest is Test {
 
     function testGetMaxSupply() public {
         uint256 supply = collection.getMaxSupply();
-        assertEq(supply, 432);
+        assertEq(supply, 60);
     }
 
     function testGetItemMaxSupply() public {
         assertEq(collection.getItemMaxSupply(COAT_ITEM_TYPE), 8);
-        assertEq(collection.getItemMaxSupply(DRESS_ITEM_TYPE), 24);
-        assertEq(collection.getItemMaxSupply(PANTS_ITEM_TYPE), 56);
-        assertEq(collection.getItemMaxSupply(TOP_ITEM_TYPE), 88);
-        assertEq(collection.getItemMaxSupply(HAT_ITEM_TYPE), 256);
+        assertEq(collection.getItemMaxSupply(DRESS_ITEM_TYPE), 10);
+        assertEq(collection.getItemMaxSupply(PANTS_ITEM_TYPE), 12);
+        assertEq(collection.getItemMaxSupply(TOP_ITEM_TYPE), 14);
+        assertEq(collection.getItemMaxSupply(HAT_ITEM_TYPE), 16);
     }
 
     function testTotalSupply() public {

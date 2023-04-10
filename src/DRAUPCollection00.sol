@@ -74,16 +74,15 @@ import {ECDSA} from "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.s
 import {ERC721A} from "erc721a/contracts/ERC721A.sol";
 import {DefaultOperatorFilterer} from "operator-filter-registry/src/DefaultOperatorFilterer.sol";
 import {BitSplit} from "./BitSplit.sol";
-import "forge-std/console2.sol";
 
 // define constants for the item types
-uint256 constant COAT_ITEM_TYPE = 0;
-uint256 constant DRESS_ITEM_TYPE = 1;
-uint256 constant PANTS_ITEM_TYPE = 2;
-uint256 constant TOP_ITEM_TYPE = 3;
-uint256 constant HAT_ITEM_TYPE = 4;
+uint constant COAT_ITEM_TYPE = 0;
+uint constant DRESS_ITEM_TYPE = 1;
+uint constant PANTS_ITEM_TYPE = 2;
+uint constant TOP_ITEM_TYPE = 3;
+uint constant HAT_ITEM_TYPE = 4;
 
-// define constants for checking mint access permissions
+// define constants for checking mint transaction validity
 uint8 constant SUCCESS_MINT_ALLOWED = 0;
 uint8 constant ERR_ALLOWLIST_SIGNATURE_INVALID = 1;
 uint8 constant ERR_ITEM_QUANTITY_ZERO = 2;
@@ -120,8 +119,6 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
 
     // Token Info
 
-    error MintValidationFailure(uint errorCode);
-
     function getMaxSupply() public view returns (uint256) {
         return maxSupplies[0] + maxSupplies[1] + maxSupplies[2] + maxSupplies[3] + maxSupplies[4];
     }
@@ -152,9 +149,23 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         }
     }
 
+    // Allow List
+
+    function isValidSignature(address addr, bytes calldata signature) public view returns (bool isValid) {
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                "\x19Ethereum Signed Message:\n32",
+                keccak256(abi.encode(addr))
+            )
+        );
+        isValid = signer == digest.recover(signature);
+    }
+
+
     // Minting
 
     error MintingNotActive();
+    error MintValidationFailure(uint errorCode);
 
     function mintingIsActive() public view returns (bool) {
         return mintingStatus == MINT_IN_PROGRESS;
@@ -167,7 +178,7 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         _;
     }
 
-    function mintingIsAllowed(uint itemType, uint quantity) public view returns (uint) {
+    function isValidMintOrder(uint itemType, uint quantity) public view returns (uint) {
         if (itemType == 0 || itemType > 4) {
             return ERR_CANNOT_MINT_ITEM_TYPE;
         }
@@ -187,16 +198,6 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         totalCost = mintPrices[itemType] * quantity;
     }
 
-    function isValidSignature(address addr, bytes calldata signature) public view returns (bool isValid) {
-        bytes32 digest = keccak256(
-            abi.encodePacked(
-                "\x19Ethereum Signed Message:\n32",
-                keccak256(abi.encode(addr))
-            )
-        );
-        isValid = signer == digest.recover(signature);
-    }
-
     // hero pieces minted by DRAUP using short form generative techniques
     function mintCoats(address to, bytes32[] calldata seeds) public onlyOwner {
         uint256 startTokenId = _nextTokenId();
@@ -214,7 +215,7 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
 
     // main collection pieces minted by public using long form generative techniques
     function mintItems(address to, uint itemType, uint quantity, bytes calldata signature) public payable onlyDuringMinting {
-        uint mintOrderStatus = mintingIsAllowed(itemType, quantity);
+        uint mintOrderStatus = isValidMintOrder(itemType, quantity);
         if (mintOrderStatus != SUCCESS_MINT_ALLOWED) {
             revert MintValidationFailure(mintOrderStatus);
         }
