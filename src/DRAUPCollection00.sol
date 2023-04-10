@@ -73,7 +73,6 @@ import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
 import {ECDSA} from "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
 import {ERC721A} from "erc721a/contracts/ERC721A.sol";
 import {DefaultOperatorFilterer} from "operator-filter-registry/src/DefaultOperatorFilterer.sol";
-import {BitSplit} from "./BitSplit.sol";
 
 // define constants for the item types
 uint constant COAT_ITEM_TYPE = 0;
@@ -96,9 +95,17 @@ uint constant MINT_NOT_STARTED = 0;
 uint constant MINT_IN_PROGRESS = 1;
 uint constant MINT_FINISHED = 2;
 
+function splitQuarter(uint256 input) pure returns (uint256[4] memory output) {
+    uint256 mask = 0xffffffffffffffffffffffffffffffff;
+    uint256 quarter = uint256(1) << 256 / 4;
+    output[0] = input & (mask >> 3 * quarter);
+    output[1] = (input >> quarter) & (mask >> 2 * quarter);
+    output[2] = (input >> 2 * quarter) & (mask >> quarter);
+    output[3] = (input >> 3 * quarter) & mask;
+}
+
 contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
     using ECDSA for bytes32;
-    using BitSplit for uint256;
 
     uint[5] private maxSupplies;
     uint[5] private currentSupplies;
@@ -234,7 +241,7 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         uint rand = block.prevrandao;
         for (uint i=0; i<quantity; i++) {
             if (quantity > 1) {
-                uint[4] memory rquarters = rand.splitQuarter();
+                uint[4] memory rquarters = splitQuarter(rand);
                 if (quantity == 2) {
                     if (i == 0) {
                         rand = rquarters[0] | rquarters[1];
