@@ -11,16 +11,17 @@ contract BasicCaseTest is Test {
     address private minter = vm.addr(uint256(keccak256(abi.encodePacked("minter"))));
     address private testSigner = 0x7eA005D1982a6cf8356289b94C6f0CbC33bE78C3;
     bytes private minterSignature = hex'77f59a1a67626d1311ae427cbd240d7ef5af7941a71d7df9158795d5655435700a99bf517107d43f81daecba20f8ac6a6b683c4abb5fa1775fed4b2393c6c9131c';
+    uint[5] private itemPrices;
+    uint[5] private initialSupplies;
+
 
     function setUp() public {
         // NB: for quantity, pricing and other announcements, join the DRAUP Discord: https://discord.gg/avumhWTxe9
-        uint256[5] memory initialSupplies;
         initialSupplies[0] = 8;
         initialSupplies[1] = 10;
         initialSupplies[2] = 12;
         initialSupplies[3] = 14;
         initialSupplies[4] = 16;
-        uint[5] memory itemPrices;
         itemPrices[1] = 0.1 ether;
         itemPrices[2] = 0.2 ether;
         itemPrices[3] = 0.3 ether;
@@ -53,11 +54,12 @@ contract BasicCaseTest is Test {
     }
 
     function testGetItemMaxSupply() public {
-        assertEq(collection.getItemMaxSupply(COAT_ITEM_TYPE), 8);
-        assertEq(collection.getItemMaxSupply(DRESS_ITEM_TYPE), 10);
-        assertEq(collection.getItemMaxSupply(PANTS_ITEM_TYPE), 12);
-        assertEq(collection.getItemMaxSupply(TOP_ITEM_TYPE), 14);
-        assertEq(collection.getItemMaxSupply(HAT_ITEM_TYPE), 16);
+        (uint[5] memory itemSupplies, uint[5] memory itemMaxSupplies, uint[5] memory itemMintCosts) = collection.itemSupplyInfo();
+        assertEq(itemMaxSupplies[0], 8);
+        assertEq(itemMaxSupplies[DRESS_ITEM_TYPE], 10);
+        assertEq(itemMaxSupplies[PANTS_ITEM_TYPE], 12);
+        assertEq(itemMaxSupplies[TOP_ITEM_TYPE], 14);
+        assertEq(itemMaxSupplies[HAT_ITEM_TYPE], 16);
     }
 
     function testTotalSupply() public {
@@ -71,8 +73,7 @@ contract BasicCaseTest is Test {
         assertEq(collection.balanceOf(minter), 0);
         vm.startPrank(minter);
         vm.difficulty(252123);
-        uint mintPrice = collection.mintCostForItems(TOP_ITEM_TYPE, 1);
-        collection.mintItems{value:mintPrice}(minter, TOP_ITEM_TYPE, 1, minterSignature);
+        collection.mintItem{value:itemPrices[TOP_ITEM_TYPE]}(TOP_ITEM_TYPE, minterSignature);
         assertEq(collection.balanceOf(minter), 1);
         uint tokenId = collection.totalSupply() - 1;
         (uint256 itemType, bytes32 seed) = collection.tokenInfo(tokenId);
@@ -83,11 +84,10 @@ contract BasicCaseTest is Test {
     function testMultipleItemsMint() public {
         runStartMint();
         vm.startPrank(minter);
-        vm.difficulty(252123);
-        uint mintPrice = collection.mintCostForItems(PANTS_ITEM_TYPE,1);
-        uint secondMintPrice = collection.mintCostForItems(HAT_ITEM_TYPE,1);
-        collection.mintItems{value:mintPrice}(minter, PANTS_ITEM_TYPE,1, minterSignature);
-        collection.mintItems{value:secondMintPrice}(minter, HAT_ITEM_TYPE,1, minterSignature);
+        vm.difficulty(54252123);
+        collection.mintItem{value:itemPrices[PANTS_ITEM_TYPE]}(PANTS_ITEM_TYPE, minterSignature);
+        vm.difficulty(25423323);
+        collection.mintItem{value:itemPrices[HAT_ITEM_TYPE]}(HAT_ITEM_TYPE, minterSignature);
         (uint256[] memory itemTypes, bytes32[] memory seeds) = collection.tokenInfos(0,0);
         assertEq(itemTypes.length, 2);
         assertEq(seeds.length, 2);

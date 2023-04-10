@@ -121,9 +121,11 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
     }
 
     function itemSupplyInfo() public view returns (uint[5] memory itemSupplies, uint[5] memory itemMaxSupplies, uint[5] memory itemMintPrices) {
-        itemSupplies = _currentSupplies;
-        itemMaxSupplies = _maxSupplies;
-        itemMintPrices = _mintPrices;
+        for (uint i = 0; i < 5; i++) {
+            itemSupplies[i] = _currentSupplies[i];
+            itemMaxSupplies[i] = _maxSupplies[i];
+            itemMintPrices[i] = _mintPrices[i];
+        }
     }
 
     function tokenInfo(uint tokenId) public view returns (uint itemType, bytes32 seed) {
@@ -177,7 +179,7 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         if (itemType == 0 || itemType > 4) {
             return ERR_CANNOT_MINT_ITEM_TYPE;
         }
-        if (_currentSupplies[itemType] == 0) {
+        if (_maxSupplies[itemType] - _currentSupplies[itemType] < 1) {
             return ERR_INSUFFICIENT_ITEM_SUPPLY;
         }
         return SUCCESS_MINT_ALLOWED;
