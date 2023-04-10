@@ -1,6 +1,7 @@
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.18;
 
 import "forge-std/Test.sol";
+import "forge-std/console2.sol";
 import "../src/DRAUPCollection00.sol";
 
 contract BasicCaseTest is Test {
@@ -8,6 +9,7 @@ contract BasicCaseTest is Test {
     event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
     address private owner = vm.addr(uint256(keccak256(abi.encodePacked("owner"))));
     address private minter = vm.addr(uint256(keccak256(abi.encodePacked("minter"))));
+    bytes private minterSignature = hex'77f59a1a67626d1311ae427cbd240d7ef5af7941a71d7df9158795d5655435700a99bf517107d43f81daecba20f8ac6a6b683c4abb5fa1775fed4b2393c6c9131c';
 
     function setUp() public {
         uint256[5] memory initialSupplies;
@@ -21,7 +23,7 @@ contract BasicCaseTest is Test {
         itemPrices[2] = 0.35 ether;
         itemPrices[3] = 0.2 ether;
         itemPrices[4] = 0.08 ether;
-        collection = new DRAUPCollection00(initialSupplies, itemPrices, 'https://example.com/yolo/');
+        collection = new DRAUPCollection00(initialSupplies, itemPrices, 'https://example.com/yolo/', 0x7eA005D1982a6cf8356289b94C6f0CbC33bE78C3);
         collection.transferOwnership(owner);
         vm.deal(owner, 100 ether);
         vm.deal(minter, 100 ether);
@@ -65,10 +67,10 @@ contract BasicCaseTest is Test {
     function testRegularItemMint() public {
         runStartMint();
         assertEq(collection.balanceOf(minter), 0);
-        vm.prank(minter);
+        vm.startPrank(minter);
         vm.difficulty(252123);
         uint mintPrice = collection.mintCostForItems(TOP_ITEM_TYPE, 1);
-        collection.mintItems{value:mintPrice}(minter, TOP_ITEM_TYPE, 1);
+        collection.mintItems{value:mintPrice}(minter, TOP_ITEM_TYPE, 1, minterSignature);
         assertEq(collection.balanceOf(minter), 1);
         uint tokenId = collection.totalSupply() - 1;
         (uint256 itemType, bytes32 seed) = collection.tokenInfo(tokenId);
@@ -82,8 +84,8 @@ contract BasicCaseTest is Test {
         vm.difficulty(252123);
         uint mintPrice = collection.mintCostForItems(PANTS_ITEM_TYPE,1);
         uint secondMintPrice = collection.mintCostForItems(HAT_ITEM_TYPE,1);
-        collection.mintItems{value:mintPrice}(minter, PANTS_ITEM_TYPE,1);
-        collection.mintItems{value:secondMintPrice}(minter, HAT_ITEM_TYPE,1);
+        collection.mintItems{value:mintPrice}(minter, PANTS_ITEM_TYPE,1, minterSignature);
+        collection.mintItems{value:secondMintPrice}(minter, HAT_ITEM_TYPE,1, minterSignature);
         (uint256[] memory itemTypes, bytes32[] memory seeds) = collection.tokenInfos(0,0);
         assertEq(itemTypes.length, 2);
         assertEq(seeds.length, 2);
