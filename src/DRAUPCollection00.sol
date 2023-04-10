@@ -101,6 +101,7 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
     using BitSplit for uint256;
 
     uint[5] private maxSupplies;
+    uint[5] private currentSupplies;
     uint[5] private mintPrices;
     uint public mintingStatus;
     address public signer;
@@ -127,8 +128,8 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         return maxSupplies[itemType];
     }
 
-    function getItemSupply(uint256 itemType) public view returns (uint256) {
-        return maxSupplies[itemType];
+    function totalItemSupply(uint256 itemType) public view returns (uint256) {
+        return currentSupplies[itemType];
     }
 
     function tokenInfo(uint256 tokenId) public view returns (uint256 itemType, bytes32 seed) {
@@ -188,7 +189,7 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         if (quantity > 4) {
             return ERR_ITEM_QUANTITY_TOO_HIGH;
         }
-        if (maxSupplies[itemType] < quantity) {
+        if (currentSupplies[itemType] + quantity > maxSupplies[itemType]) {
             return ERR_INSUFFICIENT_ITEM_SUPPLY;
         }
         return SUCCESS_MINT_ALLOWED;
@@ -228,7 +229,7 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
             revert MintValidationFailure(ERR_INSUFFICIENT_FUNDS);
         }
         // mint the tokens
-        maxSupplies[itemType] -= quantity;
+        currentSupplies[itemType] += quantity;
         uint batchStartTokenId = _nextTokenId();
         uint rand = block.prevrandao;
         for (uint i=0; i<quantity; i++) {
