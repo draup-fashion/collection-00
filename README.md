@@ -7,4 +7,4 @@ For more information visit [www.draup.xyz](https://www.draup.xyz)
 
 
 
-To get started viewing the source code see [DRAUPCollection00](.main/src/DRAUPCollection00.sol)
+To get started viewing the source code see [DRAUPCollection00.sol](./src/DRAUPCollection00.sol)
