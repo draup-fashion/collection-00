@@ -73,6 +73,7 @@ import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
 import {ECDSA} from "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {ERC721A} from "erc721a/contracts/ERC721A.sol";
+import {IRenderer} from "./IRenderer.sol";
 import {DefaultOperatorFilterer} from "operator-filter-registry/src/DefaultOperatorFilterer.sol";
 
 // define constants for the item types
@@ -108,6 +109,7 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
     address public revenueWallet;
 
     // tokens
+    IRenderer public renderer;
     string public baseTokenURI;
     mapping(uint => uint) private _tokenItemTypes;
     mapping(uint => bytes32) private _tokenSeeds;
@@ -255,6 +257,29 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         super.safeTransferFrom(from, to, tokenId, data);
     }
 
+    // upgradeable token renderer based on web3-scaffold
+    // https://github.com/holic/web3-scaffold/blob/main/packages/contracts/src/IRenderer.sol
+    function tokenURI(uint256 tokenId)
+        public
+        view
+        override
+        returns (string memory)
+    {
+        if (!_exists(tokenId)) revert URIQueryForNonexistentToken();
+        if (address(renderer) != address(0)) {
+            return renderer.tokenURI(tokenId);
+        }
+        return
+            string(
+                abi.encodePacked(
+                    baseTokenURI,
+                    PaddedString.digitsToString(tokenId, 3),
+                    ".json"
+                )
+            );
+    }
+
+
     // Admin actions
 
     error AdminActionFailure();
@@ -283,6 +308,10 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
 
     function finishMinting() public onlyOwner {
         mintingStatus = MINT_FINISHED;
+    }
+
+    function setRenderer(IRenderer _renderer) external onlyOwner {
+        renderer = _renderer;
     }
 
     function setBaseURI(string memory newBaseURI) public onlyOwner {
