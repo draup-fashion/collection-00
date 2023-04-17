@@ -54,8 +54,8 @@ contract BasicCaseTest is Test {
     }
 
     function testGetItemMaxSupply() public {
-        (uint[5] memory itemSupplies, uint[5] memory itemMaxSupplies, uint[5] memory itemMintCosts) = collection.itemSupplyInfo();
-        assertEq(itemMaxSupplies[0], 8);
+        (, uint[5] memory itemMaxSupplies,) = collection.itemSupplyInfo();
+        assertEq(itemMaxSupplies[COAT_ITEM_TYPE], 8);
         assertEq(itemMaxSupplies[DRESS_ITEM_TYPE], 10);
         assertEq(itemMaxSupplies[PANTS_ITEM_TYPE], 12);
         assertEq(itemMaxSupplies[TOP_ITEM_TYPE], 14);
