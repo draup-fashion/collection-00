@@ -71,6 +71,7 @@
 pragma solidity ~0.8.18;
 import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
 import {ECDSA} from "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
+import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {ERC721A} from "erc721a/contracts/ERC721A.sol";
 import {DefaultOperatorFilterer} from "operator-filter-registry/src/DefaultOperatorFilterer.sol";
 
@@ -96,15 +97,19 @@ uint constant MINT_FINISHED = 2;
 contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
     using ECDSA for bytes32;
 
+    // minting
     uint[5] private _maxSupplies;
     uint[5] private _currentSupplies;
     uint[5] private _mintPrices;
     uint public mintingStatus;
+
+    // management
     address public signer;
+    address public revenueWallet;
+
+    // tokens
     string public baseTokenURI;
-
     mapping(uint => uint) private _tokenItemTypes;
-
     mapping(uint => bytes32) private _tokenSeeds;
 
     constructor(uint[5] memory setSupply, uint[5] memory setMintPrices, string memory initialBaseURI, address initialSigner) ERC721A("DRAUP COLLECTION 00", "DRAUP:00") {
@@ -258,6 +263,10 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         signer = _signer;
     }
 
+    function setRevenueWallet(address _revenueWallet) public onlyOwner {
+        revenueWallet = _revenueWallet;
+    }
+
     function startMinting() public onlyOwner {
         if (mintingStatus == MINT_FINISHED) {
             revert AdminActionFailure();
@@ -280,14 +289,23 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         baseTokenURI = newBaseURI;
     }
 
+    // Operations
+
     function withdrawAll() external {
         require(address(this).balance > 0, "Zero balance");
-        (bool sent, ) = owner().call{value: address(this).balance}("");
+        (bool sent, ) = revenueWallet.call{value: address(this).balance}("");
         require(sent, "Failed to withdraw");
     }
 
     function withdrawAllERC20(IERC20 token) external {
-        token.transfer(owner(), token.balanceOf(address(this)));
+        token.transfer(revenueWallet, token.balanceOf(address(this)));
+    }
+
+    // Can be run any time after mint to optimize gas for future transfers
+    function normalizeOwnership(uint256 startTokenId, uint256 quantity) external {
+        for (uint256 i = 0; i < quantity; i++) {
+            _initializeOwnershipAt(startTokenId + i);
+        }
     }
 
 }
