@@ -74,6 +74,7 @@ import {ECDSA} from "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.s
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {ERC721A} from "erc721a/contracts/ERC721A.sol";
 import {IRenderer} from "./IRenderer.sol";
+import {PaddedString} from "draup-utils/src/PaddedString.sol";
 import {DefaultOperatorFilterer} from "operator-filter-registry/src/DefaultOperatorFilterer.sol";
 
 // define constants for the item types
@@ -151,6 +152,29 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
             itemTypes[i-start] = _tokenItemTypes[i];
             seeds[i-start] = _tokenSeeds[i];
         }
+    }
+
+    // upgradeable token renderer from https://github.com/holic/web3-scaffold/
+    function tokenURI(uint256 tokenId)
+        public
+        view
+        override
+        returns (string memory)
+    {
+        if (!_exists(tokenId)) revert URIQueryForNonexistentToken();
+        if (address(renderer) != address(0)) {
+            return renderer.tokenURI(tokenId);
+        }
+        return
+            string(
+                abi.encodePacked(
+                    baseTokenURI,
+                    PaddedString.digitsToString(tokenId, 3),
+                    "/item_",
+                    PaddedString.digitsToString(tokenId, 3),
+                    ".json"
+                )
+            );
     }
 
     // Allow List
@@ -255,28 +279,6 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         onlyAllowedOperator(from)
     {
         super.safeTransferFrom(from, to, tokenId, data);
-    }
-
-    // upgradeable token renderer based on web3-scaffold
-    // https://github.com/holic/web3-scaffold/blob/main/packages/contracts/src/IRenderer.sol
-    function tokenURI(uint256 tokenId)
-        public
-        view
-        override
-        returns (string memory)
-    {
-        if (!_exists(tokenId)) revert URIQueryForNonexistentToken();
-        if (address(renderer) != address(0)) {
-            return renderer.tokenURI(tokenId);
-        }
-        return
-            string(
-                abi.encodePacked(
-                    baseTokenURI,
-                    PaddedString.digitsToString(tokenId, 3),
-                    ".json"
-                )
-            );
     }
 
 
