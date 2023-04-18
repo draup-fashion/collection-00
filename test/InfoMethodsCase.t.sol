@@ -4,8 +4,8 @@ import "forge-std/Test.sol";
 import "forge-std/console2.sol";
 import "../src/DRAUPCollection00.sol";
 
-contract BasicCaseTest is Test {
-    DRAUPCollection00 public collection;
+contract InfoMethodsCase is Test {
+  DRAUPCollection00 public collection;
     event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
     address private owner = vm.addr(uint256(keccak256(abi.encodePacked("owner"))));
     address private minter = vm.addr(uint256(keccak256(abi.encodePacked("minter"))));
@@ -47,40 +47,48 @@ contract BasicCaseTest is Test {
         vm.prank(owner);
         collection.mintCoats(minter, testSeeds);
     }
+    function testGetMaxSupply() public {
+        uint256 supply = collection.getMaxSupply();
+        assertEq(supply, 60);
+    }
 
-    function testTotalSupply() public {
-        assertEq(collection.totalSupply(), 0);
+    function testGetItemMaxSupply() public {
+        (, uint[5] memory itemMaxSupplies,) = collection.itemSupplyInfo();
+        assertEq(itemMaxSupplies[COAT_ITEM_TYPE], 8);
+        assertEq(itemMaxSupplies[DRESS_ITEM_TYPE], 10);
+        assertEq(itemMaxSupplies[PANTS_ITEM_TYPE], 12);
+        assertEq(itemMaxSupplies[TOP_ITEM_TYPE], 14);
+        assertEq(itemMaxSupplies[HAT_ITEM_TYPE], 16);
+    }
+
+    function testGetItemCurrentSupply() public {
         runTestCoatMint();
-        assertEq(collection.totalSupply(), 5);
-    }
-
-    function testRegularItemMint() public {
-        runStartMint();
-        assertEq(collection.balanceOf(minter), 0);
-        vm.startPrank(minter);
-        vm.difficulty(252123);
-        collection.mintItem{value:itemPrices[TOP_ITEM_TYPE]}(TOP_ITEM_TYPE, minterSignature);
-        assertEq(collection.balanceOf(minter), 1);
-        uint tokenId = collection.totalSupply() - 1;
-        (uint256 itemType, bytes32 seed) = collection.tokenInfo(tokenId);
-        assertEq(itemType, 3);
-        assertGt(uint(seed), 1_000_000);
-    }
-
-    function testMultipleItemsMint() public {
         runStartMint();
         vm.startPrank(minter);
-        vm.difficulty(54252123);
         collection.mintItem{value:itemPrices[PANTS_ITEM_TYPE]}(PANTS_ITEM_TYPE, minterSignature);
-        vm.difficulty(25423323);
         collection.mintItem{value:itemPrices[HAT_ITEM_TYPE]}(HAT_ITEM_TYPE, minterSignature);
-        (uint256[] memory itemTypes, bytes32[] memory seeds) = collection.tokenInfos(0,0);
-        assertEq(itemTypes.length, 2);
-        assertEq(seeds.length, 2);
-        assertEq(itemTypes[0], 2);
-        assertEq(itemTypes[1], 4);
-        assertGt(uint(seeds[0]), 1_000_000);
-        assertGt(uint(seeds[1]), 1_000_000);
+        collection.mintItem{value:itemPrices[PANTS_ITEM_TYPE]}(PANTS_ITEM_TYPE, minterSignature);
+        collection.mintItem{value:itemPrices[TOP_ITEM_TYPE]}(TOP_ITEM_TYPE, minterSignature);
+        collection.mintItem{value:itemPrices[TOP_ITEM_TYPE]}(TOP_ITEM_TYPE, minterSignature);
+        collection.mintItem{value:itemPrices[TOP_ITEM_TYPE]}(TOP_ITEM_TYPE, minterSignature);
+        collection.mintItem{value:itemPrices[TOP_ITEM_TYPE]}(TOP_ITEM_TYPE, minterSignature);
+        collection.mintItem{value:itemPrices[HAT_ITEM_TYPE]}(HAT_ITEM_TYPE, minterSignature);
+        (uint[5] memory itemCurrentSupplies,,) = collection.itemSupplyInfo();
+        assertEq(itemCurrentSupplies[COAT_ITEM_TYPE], 5);
+        assertEq(itemCurrentSupplies[DRESS_ITEM_TYPE], 0);
+        assertEq(itemCurrentSupplies[PANTS_ITEM_TYPE], 2);
+        assertEq(itemCurrentSupplies[TOP_ITEM_TYPE], 4);
+        assertEq(itemCurrentSupplies[HAT_ITEM_TYPE], 2);
     }
+
+    function testGetItemPrice() public {
+        (,, uint[5] memory itemPriceValues) = collection.itemSupplyInfo();
+        assertEq(itemPriceValues[COAT_ITEM_TYPE], 0);
+        assertEq(itemPriceValues[DRESS_ITEM_TYPE], 0.1 ether);
+        assertEq(itemPriceValues[PANTS_ITEM_TYPE], 0.2 ether);
+        assertEq(itemPriceValues[TOP_ITEM_TYPE], 0.3 ether);
+        assertEq(itemPriceValues[HAT_ITEM_TYPE], 0.4 ether);
+    }
+
 
 }
