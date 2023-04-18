@@ -4,5 +4,6 @@ out = 'out'
 libs = ['lib']
 optimizer_runs = 50
 solc = '/usr/local/bin/solc'
+evm_version = 'london'
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
