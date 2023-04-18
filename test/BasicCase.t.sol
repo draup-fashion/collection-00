@@ -62,6 +62,35 @@ contract BasicCaseTest is Test {
         assertEq(itemMaxSupplies[HAT_ITEM_TYPE], 16);
     }
 
+    function testGetItemCurrentSupply() public {
+        runTestCoatMint();
+        runStartMint();
+        vm.startPrank(minter);
+        collection.mintItem{value:itemPrices[PANTS_ITEM_TYPE]}(PANTS_ITEM_TYPE, minterSignature);
+        collection.mintItem{value:itemPrices[HAT_ITEM_TYPE]}(HAT_ITEM_TYPE, minterSignature);
+        collection.mintItem{value:itemPrices[PANTS_ITEM_TYPE]}(PANTS_ITEM_TYPE, minterSignature);
+        collection.mintItem{value:itemPrices[TOP_ITEM_TYPE]}(TOP_ITEM_TYPE, minterSignature);
+        collection.mintItem{value:itemPrices[TOP_ITEM_TYPE]}(TOP_ITEM_TYPE, minterSignature);
+        collection.mintItem{value:itemPrices[TOP_ITEM_TYPE]}(TOP_ITEM_TYPE, minterSignature);
+        collection.mintItem{value:itemPrices[TOP_ITEM_TYPE]}(TOP_ITEM_TYPE, minterSignature);
+        collection.mintItem{value:itemPrices[HAT_ITEM_TYPE]}(HAT_ITEM_TYPE, minterSignature);
+        (uint[5] memory itemCurrentSupplies,,) = collection.itemSupplyInfo();
+        assertEq(itemCurrentSupplies[COAT_ITEM_TYPE], 5);
+        assertEq(itemCurrentSupplies[DRESS_ITEM_TYPE], 0);
+        assertEq(itemCurrentSupplies[PANTS_ITEM_TYPE], 2);
+        assertEq(itemCurrentSupplies[TOP_ITEM_TYPE], 4);
+        assertEq(itemCurrentSupplies[HAT_ITEM_TYPE], 2);
+    }
+
+    function testGetItemPrice() public {
+        (,, uint[5] memory itemPriceValues) = collection.itemSupplyInfo();
+        assertEq(itemPriceValues[COAT_ITEM_TYPE], 0);
+        assertEq(itemPriceValues[DRESS_ITEM_TYPE], 0.1 ether);
+        assertEq(itemPriceValues[PANTS_ITEM_TYPE], 0.2 ether);
+        assertEq(itemPriceValues[TOP_ITEM_TYPE], 0.3 ether);
+        assertEq(itemPriceValues[HAT_ITEM_TYPE], 0.4 ether);
+    }
+
     function testTotalSupply() public {
         assertEq(collection.totalSupply(), 0);
         runTestCoatMint();

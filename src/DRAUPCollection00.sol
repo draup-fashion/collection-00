@@ -220,10 +220,10 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
     function mintCoats(address to, bytes32[] calldata seeds) public onlyOwner {
         uint startTokenId = _nextTokenId();
         uint itemType = COAT_ITEM_TYPE;
-        if (seeds.length > _maxSupplies[itemType]) {
+        if (seeds.length > (_maxSupplies[itemType] - _currentSupplies[itemType])) {
             revert MintValidationFailure(ERR_INSUFFICIENT_ITEM_SUPPLY);
         }
-        _maxSupplies[itemType] -= seeds.length;
+        _currentSupplies[itemType] += seeds.length;
         for (uint i=0; i<seeds.length; i++) {
             _mint(to, 1);
             // item type is 0
@@ -247,7 +247,8 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
 
         // mint token
         uint upcomingTokenId = _nextTokenId();
-        bytes32 seed = keccak256(abi.encodePacked(upcomingTokenId, block.prevrandao, blockhash(block.number - 1), msg.sender));
+        // note: trying to switch to block.prevrandao but need to upgrade Forge first, it is using London EVM
+        bytes32 seed = keccak256(abi.encodePacked(upcomingTokenId, block.difficulty, blockhash(block.number - 1), msg.sender));
         _currentSupplies[itemType] += 1;
         _tokenItemTypes[upcomingTokenId] = itemType;
         _tokenSeeds[upcomingTokenId] = seed;
