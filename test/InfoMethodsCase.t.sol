@@ -8,6 +8,7 @@ contract InfoMethodsCase is Test {
   DRAUPCollection00 public collection;
     event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
     address private owner = vm.addr(uint256(keccak256(abi.encodePacked("owner"))));
+    address private safe = vm.addr(uint256(keccak256(abi.encodePacked("safe"))));
     address private minter = vm.addr(uint256(keccak256(abi.encodePacked("minter"))));
     address private testSigner = 0x7eA005D1982a6cf8356289b94C6f0CbC33bE78C3;
     bytes private minterSignature = hex'77f59a1a67626d1311ae427cbd240d7ef5af7941a71d7df9158795d5655435700a99bf517107d43f81daecba20f8ac6a6b683c4abb5fa1775fed4b2393c6c9131c';
@@ -45,7 +46,7 @@ contract InfoMethodsCase is Test {
         testSeeds[3] = bytes32(uint256(4));
         testSeeds[4] = bytes32(uint256(5));
         vm.prank(owner);
-        collection.mintCoats(minter, testSeeds);
+        collection.mintCoats(safe, testSeeds);
     }
 
     function testGetMaxSupply() public {
@@ -115,6 +116,23 @@ contract InfoMethodsCase is Test {
         (uint itemType2, bytes32 seed2) = collection.tokenInfo(nextTokenId+1);
         assertEq(itemType2, HAT_ITEM_TYPE);
         assertEq(seed2, calculatedSeed2);
+    }
+
+    function testTokensOfOwner() public {
+         runTestCoatMint();
+        uint nextTokenId = collection.totalSupply();
+        runStartMint();
+        vm.startPrank(minter);
+        vm.difficulty(4783123);
+        collection.mintItem{value:itemPrices[TOP_ITEM_TYPE]}(TOP_ITEM_TYPE, minterSignature);
+        collection.mintItem{value:itemPrices[DRESS_ITEM_TYPE]}(DRESS_ITEM_TYPE, minterSignature);
+        (uint[] memory minterTokenIds, uint[] memory minterTokenItemTypes) = collection.tokensOfOwner(minter);
+        assertEq(minterTokenIds.length, 2);
+        assertEq(minterTokenIds[0], nextTokenId);
+        assertEq(minterTokenIds[1], nextTokenId+1);
+        assertEq(minterTokenItemTypes.length, 2);
+        assertEq(minterTokenItemTypes[0], TOP_ITEM_TYPE);
+        assertEq(minterTokenItemTypes[1], DRESS_ITEM_TYPE);
     }
 
 }

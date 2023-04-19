@@ -155,6 +155,34 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         }
     }
 
+    // Returns an array of token IDs and an array of tokens item types owned by `owner`.
+    // from ERC721AQueryable with additional info about item type
+    function tokensOfOwner(address owner) public view returns (uint256[] memory tokenIds, uint[] memory tokenItemTypes) {
+        unchecked {
+            uint256 tokenIdsIdx;
+            address currOwnershipAddr;
+            uint256 tokenIdsLength = balanceOf(owner);
+            uint256[] memory foundTokenIds = new uint256[](tokenIdsLength);
+            uint256[] memory foundTokenTypes = new uint256[](tokenIdsLength);
+            TokenOwnership memory ownership;
+            for (uint256 i = _startTokenId(); tokenIdsIdx != tokenIdsLength; ++i) {
+                ownership = _ownershipAt(i);
+                if (ownership.burned) {
+                    continue;
+                }
+                if (ownership.addr != address(0)) {
+                    currOwnershipAddr = ownership.addr;
+                }
+                if (currOwnershipAddr == owner) {
+                    foundTokenIds[tokenIdsIdx++] = i;
+                    foundTokenTypes[tokenIdsIdx-1] = _tokenItemTypes[i];
+                }
+            }
+            tokenIds = foundTokenIds;
+            tokenItemTypes = foundTokenTypes;
+        }
+    }
+
     // upgradeable token renderer from https://github.com/holic/web3-scaffold/
     function tokenURI(uint256 tokenId)
         public
