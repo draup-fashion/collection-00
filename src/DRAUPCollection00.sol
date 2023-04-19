@@ -76,6 +76,7 @@ import {ERC721A} from "erc721a/contracts/ERC721A.sol";
 import {IRenderer} from "./IRenderer.sol";
 import {PaddedString} from "draup-utils/src/PaddedString.sol";
 import {DefaultOperatorFilterer} from "operator-filter-registry/src/DefaultOperatorFilterer.sol";
+import "forge-std/console2.sol";
 
 // define constants for the item types
 uint constant COAT_ITEM_TYPE = 0;
@@ -247,7 +248,7 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
 
         // mint token
         uint upcomingTokenId = _nextTokenId();
-        // note: trying to switch to block.prevrandao but need to upgrade Forge first, it is using London EVM
+        // note: using block.prevrandao but Forge currently does not support EVM's past London
         bytes32 seed = keccak256(abi.encodePacked(upcomingTokenId, block.difficulty, blockhash(block.number - 1), msg.sender));
         _currentSupplies[itemType] += 1;
         _tokenItemTypes[upcomingTokenId] = itemType;

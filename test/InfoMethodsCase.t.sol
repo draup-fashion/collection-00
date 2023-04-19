@@ -39,14 +39,15 @@ contract InfoMethodsCase is Test {
 
     function runTestCoatMint() public {
         bytes32[] memory testSeeds = new bytes32[](5);
-        testSeeds[0] = "weofijweodijweodjwedo";
-        testSeeds[1] = "weo38dhdbdbdwedo";
-        testSeeds[2] = "dkdhhhdt5633gjgjgj";
-        testSeeds[3] = "euufjeijdie22gwefwefwefg2s";
-        testSeeds[4] = "oedijeodi2u2hsu2hsi2s99j";
+        testSeeds[0] = bytes32(uint256(1));
+        testSeeds[1] = bytes32(uint256(2));
+        testSeeds[2] = bytes32(uint256(3));
+        testSeeds[3] = bytes32(uint256(4));
+        testSeeds[4] = bytes32(uint256(5));
         vm.prank(owner);
         collection.mintCoats(minter, testSeeds);
     }
+
     function testGetMaxSupply() public {
         uint256 supply = collection.getMaxSupply();
         assertEq(supply, 60);
@@ -90,5 +91,30 @@ contract InfoMethodsCase is Test {
         assertEq(itemPriceValues[HAT_ITEM_TYPE], 0.4 ether);
     }
 
+    function testTokenInfoForCoats() public {
+        runTestCoatMint();
+        (uint itemType, bytes32 seed) = collection.tokenInfo(0);
+        assertEq(itemType, COAT_ITEM_TYPE);
+        assertEq(seed, bytes32(uint256(1)));
+    }
+
+    function testTokenInfoForOtherItems() public {
+        runTestCoatMint();
+        uint nextTokenId = collection.totalSupply();
+        runStartMint();
+        vm.startPrank(minter);
+        vm.difficulty(54252123);
+        bytes32 calculatedSeed1 = keccak256(abi.encodePacked(nextTokenId, block.difficulty, blockhash(block.number - 1), minter));
+        collection.mintItem{value:itemPrices[PANTS_ITEM_TYPE]}(PANTS_ITEM_TYPE, minterSignature);
+        vm.difficulty(25423323);
+        bytes32 calculatedSeed2 = keccak256(abi.encodePacked(nextTokenId+1, block.difficulty, blockhash(block.number - 1), minter));
+        collection.mintItem{value:itemPrices[HAT_ITEM_TYPE]}(HAT_ITEM_TYPE, minterSignature);
+        (uint itemType1, bytes32 seed1) = collection.tokenInfo(nextTokenId);
+        assertEq(itemType1, PANTS_ITEM_TYPE);
+        assertEq(seed1, calculatedSeed1);
+        (uint itemType2, bytes32 seed2) = collection.tokenInfo(nextTokenId+1);
+        assertEq(itemType2, HAT_ITEM_TYPE);
+        assertEq(seed2, calculatedSeed2);
+    }
 
 }
