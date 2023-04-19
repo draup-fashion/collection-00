@@ -126,13 +126,16 @@ contract InfoMethodsCase is Test {
         vm.difficulty(4783123);
         collection.mintItem{value:itemPrices[TOP_ITEM_TYPE]}(TOP_ITEM_TYPE, minterSignature);
         collection.mintItem{value:itemPrices[DRESS_ITEM_TYPE]}(DRESS_ITEM_TYPE, minterSignature);
-        (uint[] memory minterTokenIds, uint[] memory minterTokenItemTypes) = collection.tokensOfOwner(minter);
+        (uint[] memory minterTokenIds, uint[] memory minterTokenItemTypes, string [] memory minterTokenUris ) = collection.tokensOfOwner(minter);
         assertEq(minterTokenIds.length, 2);
         assertEq(minterTokenIds[0], nextTokenId);
         assertEq(minterTokenIds[1], nextTokenId+1);
         assertEq(minterTokenItemTypes.length, 2);
         assertEq(minterTokenItemTypes[0], TOP_ITEM_TYPE);
         assertEq(minterTokenItemTypes[1], DRESS_ITEM_TYPE);
+        assertEq(minterTokenUris.length, 2);
+        assertEq(minterTokenUris[0], collection.tokenURI(nextTokenId));
+        assertEq(minterTokenUris[1], collection.tokenURI(nextTokenId+1));
     }
 
 }
