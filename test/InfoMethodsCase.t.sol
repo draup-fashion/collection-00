@@ -119,7 +119,7 @@ contract InfoMethodsCase is Test {
     }
 
     function testTokensOfOwner() public {
-         runTestCoatMint();
+        runTestCoatMint();
         uint nextTokenId = collection.totalSupply();
         runStartMint();
         vm.startPrank(minter);
@@ -136,6 +136,59 @@ contract InfoMethodsCase is Test {
         assertEq(minterTokenUris.length, 2);
         assertEq(minterTokenUris[0], collection.tokenURI(nextTokenId));
         assertEq(minterTokenUris[1], collection.tokenURI(nextTokenId+1));
+    }
+
+    function testTokenURIDefault() public {
+        runTestCoatMint();
+        uint nextTokenId = collection.totalSupply();
+        runStartMint();
+        vm.startPrank(minter);
+        vm.difficulty(4783123);
+        collection.mintItem{value:itemPrices[TOP_ITEM_TYPE]}(TOP_ITEM_TYPE, minterSignature);
+        collection.mintItem{value:itemPrices[DRESS_ITEM_TYPE]}(DRESS_ITEM_TYPE, minterSignature);
+        string memory tokenURI1 = collection.tokenURI(0);
+        string memory tokenURI1Expected = string(
+                abi.encodePacked(
+                    'https://example.com/yolo/',
+                    PaddedString.digitsToString(0, 3),
+                    "/item_",
+                    PaddedString.digitsToString(0, 3),
+                    "_metadata_",
+                    PaddedString.digitsToString(0, 1),
+                    ".json"
+                )
+        );
+        assertEq(keccak256(abi.encodePacked(tokenURI1)), keccak256(abi.encodePacked(tokenURI1Expected)));
+
+        string memory tokenURI2 = collection.tokenURI(nextTokenId);
+        string memory tokenURI2Expected = string(
+                abi.encodePacked(
+                    'https://example.com/yolo/',
+                    PaddedString.digitsToString(nextTokenId, 3),
+                    "/item_",
+                    PaddedString.digitsToString(nextTokenId, 3),
+                    "_metadata_",
+                    PaddedString.digitsToString(3, 1),
+                    ".json"
+                )
+        );
+        assertEq(keccak256(abi.encodePacked(tokenURI2)), keccak256(abi.encodePacked(tokenURI2Expected)));
+
+        uint tokenId3 = nextTokenId+1;
+        string memory tokenURI3 = collection.tokenURI(tokenId3);
+        string memory tokenURI3Expected = string(
+                abi.encodePacked(
+                    'https://example.com/yolo/',
+                    PaddedString.digitsToString(tokenId3, 3),
+                    "/item_",
+                    PaddedString.digitsToString(tokenId3, 3),
+                    "_metadata_",
+                    PaddedString.digitsToString(1, 1),
+                    ".json"
+                )
+        );
+        assertEq(keccak256(abi.encodePacked(tokenURI3)), keccak256(abi.encodePacked(tokenURI3Expected)));
+
     }
 
 }

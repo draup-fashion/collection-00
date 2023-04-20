@@ -204,6 +204,8 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
                     PaddedString.digitsToString(tokenId, 3),
                     "/item_",
                     PaddedString.digitsToString(tokenId, 3),
+                    "_metadata_",
+                    PaddedString.digitsToString(_tokenItemTypes[tokenId], 1),
                     ".json"
                 )
             );
