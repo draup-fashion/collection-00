@@ -286,6 +286,20 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
             revert MintValidationFailure(ERR_INSUFFICIENT_FUNDS);
         }
 
+        _mintItemOfType(msg.sender, itemType);
+    }
+
+    // admin minting for team and artist pieces
+    function adminMintItem(address to, uint itemType) public onlyOwner {
+        // validate mint order
+        uint mintOrderStatus = validateMintOrder(itemType);
+        if (mintOrderStatus != SUCCESS_MINT_ALLOWED) {
+            revert MintValidationFailure(mintOrderStatus);
+        }
+        _mintItemOfType(to, itemType);
+    }
+
+    function _mintItemOfType(address recipient, uint itemType) private {
         // mint token
         uint upcomingTokenId = _nextTokenId();
         // note: using block.prevrandao but Forge currently does not support EVM's past London
@@ -293,7 +307,7 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         _currentSupplies[itemType] += 1;
         _tokenItemTypes[upcomingTokenId] = itemType;
         _tokenSeeds[upcomingTokenId] = seed;
-        _mint(msg.sender, 1);
+        _mint(recipient, 1);
     }
 
     // Royalty info provided via EIP-2981
