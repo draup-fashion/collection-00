@@ -123,6 +123,9 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         signer = initialSigner;
     }
 
+    error CannotTransferToNull();
+
+
     // Token Info
 
     function getMaxSupply() public view returns (uint) {
@@ -252,6 +255,9 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
 
     // hero pieces minted by DRAUP using short form generative techniques
     function mintCoats(address to, bytes32[] calldata seeds) public onlyOwner {
+        if (to == address(0)) {
+            revert CannotTransferToNull();
+        }
         uint startTokenId = _nextTokenId();
         uint itemType = COAT_ITEM_TYPE;
         if (seeds.length > (_maxSupplies[itemType] - _currentSupplies[itemType])) {
@@ -355,23 +361,21 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         baseTokenURI = newBaseURI;
     }
 
-    // Operations
+    // Financial Operations
 
-    function withdrawAll() external {
+    receive() external payable {}
+
+    function processCurrentBalance() external {
         require(address(this).balance > 0, "Zero balance");
+        if (revenueWallet == address(0)) {
+            revert CannotTransferToNull();
+        }
         (bool sent, ) = revenueWallet.call{value: address(this).balance}("");
         require(sent, "Failed to withdraw");
     }
 
     function withdrawAllERC20(IERC20 token) external {
         token.transfer(revenueWallet, token.balanceOf(address(this)));
-    }
-
-    // Can be run any time after mint to optimize gas for future transfers
-    function normalizeOwnership(uint256 startTokenId, uint256 quantity) external {
-        for (uint256 i = 0; i < quantity; i++) {
-            _initializeOwnershipAt(startTokenId + i);
-        }
     }
 
 }
