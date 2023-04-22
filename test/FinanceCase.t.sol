@@ -83,5 +83,20 @@ contract FinanceCaseTest is Test {
         assertEq(safe.balance, 1.2 ether);
     }
 
+    function testRoyaltyOnLargeAmounts() public {
+        (address a1, uint256 amount1) = collection.royaltyInfo(1, 1000);
+        assertEq(a1, address(collection));
+        assertEq(amount1, 75);
+        (address a2, uint256 amount2) = collection.royaltyInfo(1, 1_000_000);
+        assertEq(a2, address(collection));
+        assertEq(amount2, 75_000);
+    }
+
+
+    function testRoyaltyOnSmallAmounts() public {
+        (address a1, uint256 amount1) = collection.royaltyInfo(1, 100);
+        assertEq(a1, address(collection));
+        assertEq(amount1, 7);
+    }
 
 }

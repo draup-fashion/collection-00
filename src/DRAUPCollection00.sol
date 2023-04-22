@@ -70,6 +70,7 @@
 //
 pragma solidity ~0.8.18;
 import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
+import {IERC2981, IERC165} from "openzeppelin-contracts/contracts/interfaces/IERC2981.sol";
 import {ECDSA} from "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {ERC721A} from "erc721a/contracts/ERC721A.sol";
@@ -293,6 +294,27 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         _tokenItemTypes[upcomingTokenId] = itemType;
         _tokenSeeds[upcomingTokenId] = seed;
         _mint(msg.sender, 1);
+    }
+
+    // Royalty info provided via EIP-2981
+    // https://eips.ethereum.org/EIPS/eip-2981
+    function supportsInterface(bytes4 _interfaceId)
+        public
+        view
+        override
+        returns (bool)
+    {
+        return
+            _interfaceId == type(IERC2981).interfaceId ||
+            super.supportsInterface(_interfaceId);
+    }
+
+    function royaltyInfo(uint256, uint256 salePrice)
+        external
+        view
+        returns (address, uint256)
+    {
+        return (address(this), (salePrice * 750) / 10000);
     }
 
     // Transfers, secondary trading, and on-chain royalty enforcement integration
