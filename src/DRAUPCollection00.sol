@@ -363,15 +363,21 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
 
     // Financial Operations
 
+    error ZeroAmountFailure();
+
     receive() external payable {}
 
     function processCurrentBalance() external {
-        require(address(this).balance > 0, "Zero balance");
+        if (address(this).balance == 0) {
+            revert ZeroAmountFailure();
+        }
         if (revenueWallet == address(0)) {
             revert CannotTransferToNull();
         }
         (bool sent, ) = revenueWallet.call{value: address(this).balance}("");
-        require(sent, "Failed to withdraw");
+        if (!sent) {
+            revert AdminActionFailure();
+        }
     }
 
     function withdrawAllERC20(IERC20 token) external {
