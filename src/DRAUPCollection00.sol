@@ -100,6 +100,9 @@ uint constant MINT_FINISHED = 2;
 
 contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
     using ECDSA for bytes32;
+    // ERC4906 events
+    event MetadataUpdate(uint256 _tokenId);
+    event BatchMetadataUpdate(uint256 _fromTokenId, uint256 _toTokenId);
 
     // minting
     uint[5] private _maxSupplies;
@@ -125,6 +128,19 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
     }
 
     error CannotTransferToNull();
+
+    // supported interfaces IERC2981 and IERC4906
+        function supportsInterface(bytes4 _interfaceId)
+        public
+        view
+        override
+        returns (bool)
+    {
+        return
+            _interfaceId == type(IERC2981).interfaceId ||
+            _interfaceId == bytes4(0x49064906) ||
+            super.supportsInterface(_interfaceId);
+    }
 
 
     // Token Info
@@ -312,17 +328,6 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
 
     // Royalty info provided via EIP-2981
     // https://eips.ethereum.org/EIPS/eip-2981
-    function supportsInterface(bytes4 _interfaceId)
-        public
-        view
-        override
-        returns (bool)
-    {
-        return
-            _interfaceId == type(IERC2981).interfaceId ||
-            super.supportsInterface(_interfaceId);
-    }
-
     function royaltyInfo(uint256, uint256 salePrice)
         external
         view
@@ -395,6 +400,14 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
 
     function setBaseURI(string memory newBaseURI) public onlyOwner {
         baseTokenURI = newBaseURI;
+    }
+
+    function publishMetadataUpdated(uint tokenId) public onlyOwner {
+        emit MetadataUpdate(tokenId);
+    }
+
+    function publishBatchMetadataUpdated(uint fromTokenId, uint toTokenId) public onlyOwner {
+        emit BatchMetadataUpdate(fromTokenId, toTokenId);
     }
 
     // Financial Operations

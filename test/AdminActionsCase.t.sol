@@ -7,6 +7,8 @@ import "../src/DRAUPCollection00.sol";
 contract AdminActionsCaseTest is Test {
     DRAUPCollection00 public collection;
     event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
+    event MetadataUpdate(uint256 _tokenId);
+    event BatchMetadataUpdate(uint256 _fromTokenId, uint256 _toTokenId);
     address private owner = vm.addr(uint256(keccak256(abi.encodePacked("owner"))));
     address private minter = vm.addr(uint256(keccak256(abi.encodePacked("minter"))));
     address private safe = vm.addr(uint256(keccak256(abi.encodePacked("safe"))));
@@ -72,5 +74,38 @@ contract AdminActionsCaseTest is Test {
         vm.startPrank(minter);
         collection.adminMintItem(safe, HAT_ITEM_TYPE);
     }
+
+    function testNonAdminCannotUseMetadataEmit() public {
+        runTestCoatMint();
+        vm.expectRevert();
+        vm.prank(minter);
+        collection.publishMetadataUpdated(1);
+    }
+
+    function testAdminEmitMetadataChangeSingle() public {
+        runTestCoatMint();
+        vm.expectEmit(true, false, false, false);
+        // NB test is not actually checking value of event
+        emit MetadataUpdate(1);
+        vm.prank(owner);
+        collection.publishMetadataUpdated(1);
+    }
+
+    function testNonAdminCannotUseBatchMetadataEmit() public {
+        runTestCoatMint();
+        vm.expectRevert();
+        vm.prank(minter);
+        collection.publishBatchMetadataUpdated(0, 1);
+    }
+
+    function testAdminEmitMetadataChangeBatch() public {
+        runTestCoatMint();
+        vm.expectEmit(true, true, false, false);
+        // NB test is not actually checking value of event
+        emit BatchMetadataUpdate(0,1);
+        vm.prank(owner);
+        collection.publishBatchMetadataUpdated(0, 1);
+    }
+
 
 }
