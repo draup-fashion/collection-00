@@ -76,6 +76,37 @@ contract MintPhasesCaseTest is Test {
         assertEq(collection.balanceOf(minter), 2);
     }
 
+    function testCannotMintWhenMintingIsPaused() public {
+        runStartMint();
+        vm.prank(minter);
+        vm.difficulty(252342123);
+        collection.mintItem{value:itemPrices[TOP_ITEM_TYPE]}(TOP_ITEM_TYPE, minterSignature);
+        vm.roll(100010);
+        runPauseMint();
+        vm.expectRevert();
+        vm.startPrank(minter);
+        vm.difficulty(252123);
+        collection.mintItem{value:itemPrices[TOP_ITEM_TYPE]}(TOP_ITEM_TYPE, minterSignature);
+    }
+
+    function testAdminCanResumeMintingWhenMintingIsPaused() public {
+        runStartMint();
+        assertEq(collection.balanceOf(minter), 0);
+        vm.prank(minter);
+        vm.difficulty(252342123);
+        collection.mintItem{value:itemPrices[TOP_ITEM_TYPE]}(TOP_ITEM_TYPE, minterSignature);
+        vm.roll(100010);
+        runPauseMint();
+        vm.roll(100410);
+        assertEq(collection.balanceOf(minter), 1);
+        runStartMint();
+        vm.roll(100910);
+        vm.startPrank(minter);
+        vm.difficulty(252123);
+        collection.mintItem{value:itemPrices[TOP_ITEM_TYPE]}(TOP_ITEM_TYPE, minterSignature);
+        assertEq(collection.balanceOf(minter), 2);
+    }
+
     function testCannotMintAfterMintingEnds() public {
         runStartMint();
         vm.prank(minter);
