@@ -271,6 +271,9 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         if (_maxSupplies[itemType] - _currentSupplies[itemType] < 1) {
             return ERR_INSUFFICIENT_ITEM_SUPPLY;
         }
+        if (_mintCounts[msg.sender] >= _maxMintsPerCustomer) {
+            return ERR_MAX_MINTS_REACHED;
+        }
         return SUCCESS_MINT_ALLOWED;
     }
 
@@ -298,9 +301,6 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         uint mintOrderStatus = validateMintOrder(itemType);
         if (mintOrderStatus != SUCCESS_MINT_ALLOWED) {
             revert MintValidationFailure(mintOrderStatus);
-        }
-        if (_mintCounts[msg.sender] >= _maxMintsPerCustomer) {
-            revert MintValidationFailure(ERR_MAX_MINTS_REACHED);
         }
         if (!isValidSignature(msg.sender, signature)) {
             revert MintValidationFailure(ERR_ALLOWLIST_SIGNATURE_INVALID);
