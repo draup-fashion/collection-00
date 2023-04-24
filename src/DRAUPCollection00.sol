@@ -264,14 +264,14 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         _;
     }
 
-    function validateMintOrder(uint itemType) public view returns (uint) {
+    function validateMintOrder(uint itemType, address minter) public view returns (uint) {
         if (itemType == 0 || itemType > 4) {
             return ERR_CANNOT_MINT_ITEM_TYPE;
         }
         if (_maxSupplies[itemType] - _currentSupplies[itemType] < 1) {
             return ERR_INSUFFICIENT_ITEM_SUPPLY;
         }
-        if (_mintCounts[msg.sender] >= _maxMintsPerCustomer) {
+        if (_mintCounts[minter] >= _maxMintsPerCustomer) {
             return ERR_MAX_MINTS_REACHED;
         }
         return SUCCESS_MINT_ALLOWED;
@@ -298,7 +298,7 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
     // main collection pieces minted by public using long form generative techniques
     function mintItem(uint itemType, bytes calldata signature) public payable onlyDuringMinting {
         // validate mint order
-        uint mintOrderStatus = validateMintOrder(itemType);
+        uint mintOrderStatus = validateMintOrder(itemType, msg.sender);
         if (mintOrderStatus != SUCCESS_MINT_ALLOWED) {
             revert MintValidationFailure(mintOrderStatus);
         }
@@ -315,7 +315,7 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
     // admin minting for team and artist pieces
     function adminMintItem(address to, uint itemType) public onlyOwner {
         // validate mint order
-        uint mintOrderStatus = validateMintOrder(itemType);
+        uint mintOrderStatus = validateMintOrder(itemType, msg.sender);
         if (mintOrderStatus != SUCCESS_MINT_ALLOWED) {
             revert MintValidationFailure(mintOrderStatus);
         }
