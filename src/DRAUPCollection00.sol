@@ -92,6 +92,7 @@ uint8 constant ERR_ALLOWLIST_SIGNATURE_INVALID = 1;
 uint8 constant ERR_INSUFFICIENT_FUNDS = 2;
 uint8 constant ERR_INSUFFICIENT_ITEM_SUPPLY = 3;
 uint8 constant ERR_CANNOT_MINT_ITEM_TYPE = 4;
+uint8 constant ERR_MAX_MINTS_REACHED = 5;
 
 // define constants for mint process
 uint constant MINT_NOT_STARTED = 0;
@@ -108,6 +109,8 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
     uint[5] private _maxSupplies;
     uint[5] private _currentSupplies;
     uint[5] private _mintPrices;
+    uint immutable public _maxMintsPerCustomer;
+    mapping (address => uint) private _mintCounts;
     uint public mintingStatus;
 
     // management
@@ -120,11 +123,12 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
     mapping(uint => uint) private _tokenItemTypes;
     mapping(uint => bytes32) private _tokenSeeds;
 
-    constructor(uint[5] memory setSupply, uint[5] memory setMintPrices, string memory initialBaseURI, address initialSigner) ERC721A("DRAUP COLLECTION 00", "DRAUP:00") {
+    constructor(uint[5] memory setSupply, uint[5] memory setMintPrices, string memory initialBaseURI, address initialSigner, uint maxMints) ERC721A("DRAUP COLLECTION 00", "DRAUP:00") {
         _maxSupplies = setSupply;
         _mintPrices = setMintPrices;
         baseTokenURI = initialBaseURI;
         signer = initialSigner;
+        _maxMintsPerCustomer = maxMints;
     }
 
     error CannotTransferToNull();
@@ -295,13 +299,16 @@ contract DRAUPCollection00 is ERC721A, Ownable, DefaultOperatorFilterer {
         if (mintOrderStatus != SUCCESS_MINT_ALLOWED) {
             revert MintValidationFailure(mintOrderStatus);
         }
+        if (_mintCounts[msg.sender] >= _maxMintsPerCustomer) {
+            revert MintValidationFailure(ERR_MAX_MINTS_REACHED);
+        }
         if (!isValidSignature(msg.sender, signature)) {
             revert MintValidationFailure(ERR_ALLOWLIST_SIGNATURE_INVALID);
         }
         if (msg.value < _mintPrices[itemType]) {
             revert MintValidationFailure(ERR_INSUFFICIENT_FUNDS);
         }
-
+        _mintCounts[msg.sender] += 1;
         _mintItemOfType(msg.sender, itemType);
     }
 

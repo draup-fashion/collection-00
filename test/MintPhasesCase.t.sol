@@ -25,7 +25,7 @@ contract MintPhasesCaseTest is Test {
         itemPrices[2] = 0.2 ether;
         itemPrices[3] = 0.3 ether;
         itemPrices[4] = 0.4 ether;
-        collection = new DRAUPCollection00(initialSupplies, itemPrices, 'https://example.com/yolo/', testSigner);
+        collection = new DRAUPCollection00(initialSupplies, itemPrices, 'https://example.com/yolo/', testSigner, 5);
         collection.transferOwnership(owner);
         vm.deal(owner, 100 ether);
         vm.deal(minter, 100 ether);

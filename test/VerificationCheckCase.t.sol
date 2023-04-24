@@ -25,7 +25,7 @@ contract VerificationCheckCase is Test {
         itemPrices[2] = 0.35 ether;
         itemPrices[3] = 0.2 ether;
         itemPrices[4] = 0.08 ether;
-        collection = new DRAUPCollection00(initialSupplies, itemPrices, 'https://example.com/yolo/', testSigner);
+        collection = new DRAUPCollection00(initialSupplies, itemPrices, 'https://example.com/yolo/', testSigner, 3);
         collection.transferOwnership(owner);
         vm.deal(owner, 100 ether);
         vm.deal(minter, 100 ether);
